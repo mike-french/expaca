@@ -18,7 +18,7 @@ defmodule Expaca do
   @type neighborhood() :: [pid(), ...]
 
   @doc """
-  Run a grid simulation.
+  Run a synchronized grid simulation.
 
   Dimensions `{ni,nj}` are the size of the 2D grid in I and J directions.
 
@@ -31,7 +31,7 @@ defmodule Expaca do
   Rows are divided by a single newline `\\n`.
   The dimensions are assumed to match.
   The string is in row-major order, 
-  and the origin is in the lower right,
+  and the origin is in the lower left,
   so the first line in the string is the j=nj row for varying i.
   For example, a glider:
 
@@ -57,6 +57,8 @@ defmodule Expaca do
     do_synch(dims, frame0, ngen)
   end
 
+  @spec do_synch(dimensions(), String.t() | frame(), generation()) :: [String.t()]
+
   defp do_synch({_ni, nj} = dims, str, ngen) when is_binary(str) do
     do_synch(dims, str2frm(str, 1, nj), ngen)
   end
@@ -66,6 +68,7 @@ defmodule Expaca do
     recv_frames(dims)
   end
 
+  @spec recv_frames(dimensions(), [String.t()]) :: [String.t()]
   defp recv_frames(dims, frames \\ []) do
     receive do
       {:frame, frame} -> recv_frames(dims, [frm2str(frame,dims)|frames])
@@ -90,7 +93,6 @@ defmodule Expaca do
   defp str2frm(<<>>, _i, _j, frame), do: frame
 
   # convert a map frame to a string 
-  # the frame may be sparse, with just occupied cells
   @spec frm2str(frame(), dimensions()) :: String.t()
   defp frm2str(frame, {ni, nj}) do
     Enum.reduce(nj..1//-1, "", fn j, str ->

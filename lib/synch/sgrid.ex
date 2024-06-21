@@ -33,6 +33,7 @@ defmodule Expaca.Synch.Sgrid do
     sgrid(client, dims, grid, ngen, map_size(grid), MapSet.new())
   end
 
+  # main loop
   @spec sgrid(
           client :: pid(),
           dims :: E.dimensions(),
@@ -84,6 +85,6 @@ defmodule Expaca.Synch.Sgrid do
 
   # set a new boolean state value in a frame set of occupied cells
   @spec frame_update(E.frame(), E.location(), E.state()) :: E.frame()
-  defp frame_update(frame, loc, false), do: MapSet.delete(frame, loc)
+  defp frame_update(frame, _loc, false), do: frame
   defp frame_update(frame, loc, true), do: MapSet.put(frame, loc)
 end

@@ -50,21 +50,48 @@ topology of connections:
 - W edge (nj-2) 5 neighbors (n, ne, e, se, s)
 - center (ni-2)*(nj-2) 8 neighbors (all directions)
 
-A _frame_ is a completed step for all cells.
-The state values in a frame are boolean integer (0,1).
-There are two representations:
-- set of locations that are occupied, 
-  default (not present in set) for empty locations
-- ASCII string rendering using:
-  - `'.'` empty
-  - `'X'` occupied
-  - `'\n'` end of row
+There are two simple kinds of boundary conditions:
+- assume zero occupancy outside the dimensions
+  (clipped neighborhoods, as given above)
+- cyclic boundary condition, where the boundary is the opposite edge
+  (modulo arithmetic for cell locations)
+  
+We will initially implement zero occupancy boundary.
 
 ## Cell State
 
 We use a simple binary state:
-- 0, false, empty, white
-- 1, true, occupied, black
+- `false`: empty
+- `true`: occupied
+
+## Grid State
+
+A _frame_ is a completed step for all cells.
+
+There are two frame representations:
+- internal: set of locations that are occupied;
+  empty locations are not present in the set
+- external: ASCII string rendered using:
+  - `'.'` empty
+  - `'X'` occupied
+  - `'\n'` end of row
+
+For example, a glider:
+
+```
+  MapSet: [ {1,2}, {2,2}, {3,2}, {3,3}, {2,4} ]
+```
+
+or ASCII art version:
+
+ ```
+  \"\"\"
+  .X..
+  ..X.
+  XXX.
+  ....
+  \"\"\"
+  ```
   
 ## Update Rule
 
@@ -80,7 +107,7 @@ There are two kinds of update rules:
 
 We will initially use the classic update rule 
 from Conway's Game of Life (GoL), which uses simple counts:
-- any cell with 3 occupied neihbors, stays or becomes occupied
+- any cell with 3 occupied neighbors, stays or becomes occupied
 - a live cell with 2 occupied neighbors stays alive
 
 ## Synch CA
@@ -103,7 +130,7 @@ Each cell will have the following state:
 
 The previous state is known to be complete for all cells.
 
-The current generation is just the previous generation + 1.
+The current generation is just the previous generation - 1.
 
 There will be two types of process:
 - grid manager (one instance)
