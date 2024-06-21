@@ -19,7 +19,6 @@ defmodule Expaca.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      # :logger,
       extra_applications: []
     ]
   end
@@ -28,7 +27,6 @@ defmodule Expaca.MixProject do
     [
       main: "readme",
       output: "doc/api",
-      assets: "assets",
       extras: ["README.md"]
     ]
   end

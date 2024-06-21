@@ -27,10 +27,10 @@ defmodule Expaca.Synch.Sgrid do
     end
 
     for j <- 1..nj, i <- 1..ni, loc = {i, j} do
-      send(Map.fetch!(grid, loc), {:init, self(), Map.get(frame0, loc, 0)})
+      send(Map.fetch!(grid, loc), {:init, self(), MapSet.member?(frame0, loc)})
     end
 
-    sgrid(client, dims, grid, ngen, map_size(grid), %{})
+    sgrid(client, dims, grid, ngen, map_size(grid), MapSet.new())
   end
 
   @spec sgrid(
@@ -42,7 +42,7 @@ defmodule Expaca.Synch.Sgrid do
           frame :: E.frame()
         ) :: no_return()
 
-  def sgrid(client, _dims, _grid, 0, _nmsg, %{}) do
+  def sgrid(client, _dims, _grid, 0, _nmsg, _frame) do
     # end of all generations
     send(client, :end_of_life)
   end
@@ -50,14 +50,14 @@ defmodule Expaca.Synch.Sgrid do
   def sgrid(client, dims, grid, igen, 0, frame) do
     # end of frame for this generation 
     send(client, {:frame, frame})
-    sgrid(client, dims, grid, igen - 1, map_size(grid), %{})
+    sgrid(client, dims, grid, igen - 1, map_size(grid), MapSet.new())
   end
 
   def sgrid(client, dims, grid, igen, nmsg, frame) do
     # build a frame from all cell updates
     receive do
       {:update, loc, state, ^igen} ->
-        new_frame = Map.put(frame, loc, state)
+        new_frame = frame_update(frame, loc, state)
         sgrid(client, dims, grid, igen, nmsg - 1, new_frame)
     end
   end
@@ -81,4 +81,9 @@ defmodule Expaca.Synch.Sgrid do
       Map.fetch!(grid, {ii, jj})
     end
   end
+
+  # set a new boolean state value in a frame set of occupied cells
+  @spec frame_update(E.frame(), E.location(), E.state()) :: E.frame()
+  defp frame_update(frame, loc, false), do: MapSet.delete(frame, loc)
+  defp frame_update(frame, loc, true), do: MapSet.put(frame, loc)
 end

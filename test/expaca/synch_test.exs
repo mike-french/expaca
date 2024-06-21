@@ -4,11 +4,7 @@ defmodule Expaca.SynchTest do
 
   doctest Expaca
 
-  @diag %{
-    {1, 1} => 1,
-    {2, 2} => 1,
-    {3, 3} => 1
-  }
+  @diag MapSet.new([{1, 1}, {2, 2}, {3, 3}])
 
   @diag1 """
   ..X

@@ -31,7 +31,7 @@ defmodule Expaca.Synch.Scell do
 
   # main loop
   # igen: generation number, count down to 0
-  # csum: simple GoL update rule just needs sum of neighborhood occupancy
+  # occ: simple GoL update rule just needs sum of neighborhood occupancy
   # nmsg: counter for receiving messages from neighbors, count down to 0
   @spec scell(
           loc :: E.location(),
@@ -40,35 +40,38 @@ defmodule Expaca.Synch.Scell do
           cells :: E.neighborhood(),
           state :: E.state(),
           nmsg :: non_neg_integer(),
-          csum :: E.occupancy()
+          occ :: E.occupancy()
         ) :: no_return()
 
-  defp scell(_loc, _grid, 0, _cells, _state, _, _) do
-    :ok
-  end
+  defp scell(_loc, _grid, 0, _cells, _state, _, _), do: :ok
 
-  defp scell(loc, grid, igen, cells, state, 0, csum) do
+  defp scell(loc, grid, igen, cells, state, 0, occ) do
     # received all messages from the neighborhood
     # calculate state for this generation 
     # notify grid manager and all neighbors
     new_igen = igen - 1
-    new_state = update(state, csum)
+    new_state = cell_update(occ, state)
     for pid <- [grid | cells], do: send(pid, {:update, loc, new_state, new_igen})
     scell(loc, grid, new_igen, cells, new_state, length(cells), 0)
   end
 
-  defp scell(loc, grid, igen, cells, state, nmsg, csum) do
+  defp scell(loc, grid, igen, cells, mystate, nmsg, occ) do
     # receive state message from neighbors for this generation
     # decrement messages to be received, increment occupancy state
     receive do
-      {:update, _cloc, cval, ^igen} ->
-        scell(loc, grid, igen, cells, state, nmsg - 1, csum + cval)
+      {:update, _loc, instate, ^igen} ->
+        scell(loc, grid, igen, cells, mystate, nmsg - 1, state_update(occ,instate))
     end
   end
 
   # Game of Life update rule
-  @spec update(E.state(), E.occupancy()) :: E.state()
-  defp update(_, 3), do: 1
-  defp update(1, 2), do: 1
-  defp update(_, _), do: 0
+  @spec cell_update(E.occupancy(), E.state())  :: E.state()
+  defp cell_update(3, _any), do: true
+  defp cell_update(2, true), do: true
+  defp cell_update(_, _any), do: false
+
+  # update occupancy of neighborhood
+  @spec state_update(E.occupancy(), E.state()) :: E.occupancy()
+  defp state_update(occ, false), do: occ
+  defp state_update(occ, true), do: occ + 1
 end
