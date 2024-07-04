@@ -40,15 +40,15 @@ For Game of Life rules, we do not need detailed directional datastructures.
   
 On a 2D grid there are 9 zones, where cells have a specific
 topology of connections:
-- NW corner (1) 3 neighbors (e, se, s)
-- N edge (ni-2) 5 neighbors (e, se, s, sw, w)
-- NE corner (1) 3 neighbors (s, sw, w)
-- E edge (nj-2) 5 neighbors (s, sw, w, nw, n)
-- SE corner (1) 3 neighbors (w, nw, n)
-- S edge (ni-1) 5 neighbors (w, nw, n, ne, e)
-- SW corner (1) 3 neighbors (n, ne, e)
-- W edge (nj-2) 5 neighbors (n, ne, e, se, s)
-- center (ni-2)*(nj-2) 8 neighbors (all directions)
+- NW corner: `1` cells, 3 neighbors (e, se, s)
+- N edge: `ni-2` cells, 5 neighbors (e, se, s, sw, w)
+- NE corner: `1` cells, 3 neighbors (s, sw, w)
+- E edge: `nj-2` cells, 5 neighbors (s, sw, w, nw, n)
+- SE corner: `1` cells, 3 neighbors (w, nw, n)
+- S edge: `ni-1` cells, 5 neighbors (w, nw, n, ne, e)
+- SW corner: `1` cells, 3 neighbors (n, ne, e)
+- W edge: `nj-2` cells, 5 neighbors (n, ne, e, se, s)
+- center: `(ni-2)*(nj-2)` cells, 8 neighbors (all directions)
 
 There are two simple kinds of boundary conditions:
 - assume zero occupancy outside the dimensions
@@ -69,20 +69,23 @@ We use a simple binary state:
 A _frame_ is a completed step for all cells.
 
 There are two frame representations:
-- internal: set of locations that are occupied;
+- internal `Frame`: set of locations that are occupied;
   empty locations are not present in the set
-- external: ASCII string rendered using:
+- ASCII string rendered using:
   - `'.'` empty
   - `'X'` occupied
   - `'\n'` end of row
+- `Exa.Image.Bitmap` which can be converted to ASCII string or Exa images
 
-For example, a glider:
+For example, a glider...
+
+frame set representation:
 
 ```
   MapSet: [ {1,2}, {2,2}, {3,2}, {3,3}, {2,4} ]
 ```
 
-or ASCII art version:
+ASCII art version:
 
  ```
   \"\"\"
@@ -92,7 +95,11 @@ or ASCII art version:
   ....
   \"\"\"
   ```
-  
+
+A set is used internally for frames, 
+because in Game of Life, the occupancy tends to be sparse,
+so the set will usually be small.
+
 ## Update Rule
 
 The same update rule is used for all cells (homogeneous).
@@ -122,17 +129,18 @@ to execute the grid update in lockstep.
 Each cell will have the following state:
 - location in the grid
 - collection of neighbor process addresses 
-- previous state (0,1)
-- generation number for previous state (1-based) 
+- previous state (boolean)
+- generation number for previous state  
 - accumulated messages of neighboring state to calculate a new state
 - some counters counting down to zero, 
   for cell update and end of simulation
 
 The previous state is known to be complete for all cells.
 
-The current generation is just the previous generation - 1.
+The current generation counts down to 0,
+so the next generation is just previous generation - 1.
 
-There will be two types of process:
+There are two types of process:
 - grid manager (one instance)
   - spawns and controls the cells
   - receives updates from cells and builds result frames
@@ -149,6 +157,52 @@ There will be two types of process:
 
 ## Asynch CA
 
+An Asynchronous CA evolves without any globally synchronized 
+cell steps or frame steps.
+
+Each cell maintains a copy of their neighborhood state.
+Any neighborhood change event triggers a new state for the cell.
+The cell broadcasts any new change to all its neighbors
+and the grid manager.
+
+Cell changes are serialized through the grid manager, 
+in some non-deterministic (but fair) sequence.
+
+The grid manager generates a new frame for _every_ cell change,
+so the output frame rate is much higher than in the synchronized case.
+
+### Asynchronous Execution
+
+Overall behavior should be _fair_
+so that no particular cells or regions of the grid
+are favored, or disfavored.
+
+The Erlang BEAM runtime is designed to be fair.
+
+Cell processes will be distributed across all
+hardware threads, managed by one scheduler per thread (by default).
+There is no concept of locality 
+when assigning cells to threads (schedulers).
+The grid is not spatially partitioned.
+Assignment is non-deterministic, 
+which means most messages between neighborhood cells
+will be between threads (inefficient). 
+
+If it were possible to partition the grid
+and pin cells to specific threads,
+local evolution would be faster,
+but the thread boundaries might appear 
+as artifacts in the output,
+as regions evolve faster than cross-border changes.
+
+Cells will naturally block, waiting for new changes to the neighborhood. 
+Pathological behavior may occur
+when local cycles of cells trigger each other 
+(e.g. traffic light blinker).
+The BEAM must be fair enough to prevent local cycles
+from starving other regions of active cells.
+
 Asynch CA appears to evolve at random,
 but the random number generator is 
 deterministic, given the original seed.
+
