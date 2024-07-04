@@ -1,31 +1,32 @@
 defmodule Expaca.Synch.Sgrid do
   @moduledoc """
-  Synchronous grid.
+  Synchronous grid implemented as a 
+  connected set of asynchronous processes.
   """
 
-  alias Expaca, as: E
+  alias Expaca.Types, as: X
   alias Expaca.Synch.Scell
 
   @doc "Start the synchronous grid process."
-  @spec start(E.dimensions(), E.generation(), E.frame()) :: pid()
-  def start(dims, ngen, frame0) do
-    spawn_link(__MODULE__, :init, [self(), dims, ngen, frame0])
+  @spec start(X.frame(), X.generation()) :: pid()
+  def start({w, h, frame0}, ngen) do
+    spawn_link(__MODULE__, :init, [self(), {w, h}, ngen, frame0])
   end
 
-  # initialize the grid, start all cells
-  # send the cells their neighborhood connections
-  # send the initial state and trigger them to start evolving
-  @spec init(pid(), E.dimensions(), E.generation(), E.frame()) :: no_return()
+  @spec init(pid(), X.dimensions(), X.generation(), MapSet.t()) :: no_return()
   def init(client, {ni, nj} = dims, ngen, frame0) do
+    # initialize the grid, start all cells
     grid =
       for j <- 1..nj, i <- 1..ni, loc = {i, j}, into: %{} do
         {loc, Scell.start(loc, self(), ngen)}
       end
 
+    # send the cells their neighborhood connections
     for {loc, pid} <- grid do
       send(pid, {:connect, self(), neighborhood(loc, dims, grid)})
     end
 
+    # send the initial state and trigger them to start evolving
     for j <- 1..nj, i <- 1..ni, loc = {i, j} do
       send(Map.fetch!(grid, loc), {:init, self(), MapSet.member?(frame0, loc)})
     end
@@ -36,11 +37,11 @@ defmodule Expaca.Synch.Sgrid do
   # main loop
   @spec sgrid(
           client :: pid(),
-          dims :: E.dimensions(),
-          grid :: E.grid(),
-          igen :: E.generation(),
+          dims :: X.dimensions(),
+          grid :: X.grid(),
+          igen :: X.generation(),
           nmsg :: non_neg_integer(),
-          frame :: E.frame()
+          frame :: MapSet.t()
         ) :: no_return()
 
   def sgrid(client, _dims, _grid, 0, _nmsg, _frame) do
@@ -50,6 +51,7 @@ defmodule Expaca.Synch.Sgrid do
 
   def sgrid(client, dims, grid, igen, 0, frame) do
     # end of frame for this generation 
+    # report to client, decrement generation and initialize next frame
     send(client, {:frame, frame})
     sgrid(client, dims, grid, igen - 1, map_size(grid), MapSet.new())
   end
@@ -67,7 +69,7 @@ defmodule Expaca.Synch.Sgrid do
   # for complex rules, use map of delta => pid
   # for cyclic boundary conditions:
   # replace filters with modulo arithmetic
-  @spec neighborhood(E.location(), E.dimensions(), E.grid()) :: E.neighborhood()
+  @spec neighborhood(X.location(), X.dimensions(), X.grid()) :: X.neighborhood()
   defp neighborhood({i, j}, {ni, nj}, grid) do
     for di <- -1..1,
         dj <- -1..1,
@@ -84,7 +86,7 @@ defmodule Expaca.Synch.Sgrid do
   end
 
   # set a new boolean state value in a frame set of occupied cells
-  @spec frame_update(E.frame(), E.location(), E.state()) :: E.frame()
+  @spec frame_update(MapSet.t(), X.location(), X.state()) :: MapSet.t()
   defp frame_update(frame, _loc, false), do: frame
   defp frame_update(frame, loc, true), do: MapSet.put(frame, loc)
 end

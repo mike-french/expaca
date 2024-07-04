@@ -2,34 +2,31 @@ defmodule Expaca do
   @moduledoc """
   EXPeriments with Asynchronous Cellular Automata.
   """
+  alias Exa.Image.Types, as: I
 
-  @maxdim 256
-  @maxgen 1_000
+  import Expaca.Types
+  alias Expaca.Types, as: X
 
+  alias Expaca.Frame
   alias Expaca.Synch.Sgrid
 
-  @type state() :: bool()
-  @type occupancy() :: non_neg_integer()
-  @type dimensions() :: {pos_integer(), pos_integer()}
-  @type location() :: {pos_integer(), pos_integer()}
-  @type frame() :: MapSet.t()
-  @type generation() :: non_neg_integer()
-  @type grid() :: %{location() => pid()}
-  @type neighborhood() :: [pid(), ...]
+  # ----------------
+  # public interface
+  # ----------------
 
   @doc """
   Run a synchronized grid simulation.
 
-  Dimensions `{ni,nj}` are the size of the 2D grid in I and J directions.
+  Dimensions `{w,h}` are the size of the 2D grid in I and J directions.
 
   A cell location is a pair of 1-based integer indexes `{i,j}`.
 
-  The initial frame is a set of occupied locations.
+  The initial state can be specified as either:
+  - frame (MapSet) of occupied locations (with dimensions)
+  - string ascii art where `'X'` is occupied and `'.'` is empty (with dimensions)
+  - Exa Bitmap containing a bitstring buffer
 
-  The initial state may also be provided as a string,
-  with `X` for occupied and `.` for empty. 
-  Rows are divided by a single newline `\\n`.
-  The dimensions are assumed to match.
+  For a string state, rows are divided by a single newline `\\n`.
   The string is in row-major order, 
   and the origin is in the lower left,
   so the first line in the string is the j=nj row for varying i.
@@ -46,60 +43,37 @@ defmodule Expaca do
 
   The number of generations is the number of steps in the simulation to perform.
   Each step will generate a complete synchronous frame of all cell states.
+
+  The output is a sequence of bitmaps.
+  Use `Exa.Image.Bitmap` to convert to ASCII art and 1- or 3-byte images.
   """
-  @spec grid_synch(dimensions(), String.t() | frame(), generation()) :: [String.t()]
-  def grid_synch(dims, frame0, ngen \\ 100)
+  @spec grid_synch(X.frame() | X.asciiart() | %I.Bitmap{}, X.generation()) :: [%I.Bitmap{}]
+  def grid_synch(frame0, ngen \\ 100)
 
-  def grid_synch({ni, nj} = dims, frame0, ngen)
-      when is_integer(ni) and 3 <= ni and ni <= @maxdim and
-             is_integer(nj) and 3 <= nj and nj <= @maxdim and
-             is_integer(ngen) and 1 <= ngen and ngen <= @maxgen do
-    do_synch(dims, frame0, ngen)
+  def grid_synch({w, h, _str} = ascii0, ngen) when is_asciiart(ascii0) and is_ngen(ngen) do
+    ascii0 |> Frame.from_ascii() |> Sgrid.start(ngen)
+    recv_frames({w, h})
   end
 
-  @spec do_synch(dimensions(), String.t() | frame(), generation()) :: [String.t()]
-
-  defp do_synch({_ni, nj} = dims, str, ngen) when is_binary(str) do
-    do_synch(dims, str2frm(str, 1, nj), ngen)
+  def grid_synch(%I.Bitmap{width: w, height: h} = bmp0, ngen) do
+    bmp0 |> Frame.from_bitmap() |> Sgrid.start(ngen)
+    recv_frames({w, h})
   end
 
-  defp do_synch(dims, frame0, ngen) when is_struct(frame0, MapSet) do
-    Sgrid.start(dims, ngen, frame0)
-    recv_frames(dims)
+  def grid_synch({w, h, _} = frame0, ngen) when is_frame(frame0) and is_ngen(ngen) do
+    frame0 |> Sgrid.start(ngen)
+    recv_frames({w, h})
   end
 
-  @spec recv_frames(dimensions(), [String.t()]) :: [String.t()]
-  defp recv_frames(dims, frames \\ []) do
+  # -----------------
+  # private functions
+  # -----------------
+
+  @spec recv_frames(X.dimensions(), [%I.Bitmap{}]) :: [%I.Bitmap{}]
+  defp recv_frames({w, h} = dims, bitmaps \\ []) do
     receive do
-      {:frame, frame} -> recv_frames(dims, [frm2str(frame,dims)|frames])
-      :end_of_life -> Enum.reverse(frames)
+      {:frame, fset} -> recv_frames(dims, [Frame.to_bitmap({w, h, fset}) | bitmaps])
+      :end_of_life -> Enum.reverse(bitmaps)
     end
-  end
-
-  # convert a string frame to a map indexed by locations
-  # assumes format is correct, with consistent rows
-  # and assume it matches the dimension specification
-  @spec str2frm(String.t(), pos_integer(), pos_integer(), frame()) :: frame()
-  defp str2frm(str, i, j, frame \\ MapSet.new())
-
-  defp str2frm(<<?\n, rest::binary>>, _i, j, frame), do: str2frm(rest, 1, j - 1, frame)
-
-  defp str2frm(<<?X, rest::binary>>, i, j, frame) do
-    str2frm(rest, i + 1, j, MapSet.put(frame, {i, j}))
-  end
-
-  defp str2frm(<<?., rest::binary>>, i, j, frame), do: str2frm(rest, i + 1, j, frame)
-
-  defp str2frm(<<>>, _i, _j, frame), do: frame
-
-  # convert a map frame to a string 
-  @spec frm2str(frame(), dimensions()) :: String.t()
-  defp frm2str(frame, {ni, nj}) do
-    Enum.reduce(nj..1//-1, "", fn j, str ->
-      Enum.reduce(1..ni, str, fn i, str ->
-        c = if MapSet.member?(frame, {i,j}), do: ?X, else: ?.
-        <<str::binary, c>>
-      end) <> "\n"
-    end)
   end
 end

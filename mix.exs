@@ -3,7 +3,7 @@ defmodule Expaca.MixProject do
 
   def project do
     [
-      app: :exa,
+      app: :expaca,
       name: "Expaca",
       version: "0.1.0",
       elixir: "~> 1.15",
@@ -19,7 +19,7 @@ defmodule Expaca.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: []
+      extra_applications: [:logger]
     ]
   end
 
@@ -35,12 +35,16 @@ defmodule Expaca.MixProject do
   defp deps do
     [
       # runtime code dependencies ------------------
-      # {:logger, "~> 1.0"},
-      # ... tumbleweed ...
+
+      {:exa, git: "https://github.com/red-jade/exa_core.git", tag: "v0.1.1"},
+      {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.1.1"},
+      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.1.2"},
 
       # building, documenting ----------
+
       # typechecking
       {:dialyxir, "~> 1.0", only: :dev, runtime: false},
+
       # documentation
       {:ex_doc, "~> 0.30", only: :dev, runtime: false}
 

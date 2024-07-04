@@ -2,6 +2,8 @@ defmodule Expaca.SynchTest do
   use ExUnit.Case
   alias Expaca
 
+  alias Exa.Image.Bitmap
+
   doctest Expaca
 
   @diag MapSet.new([{1, 1}, {2, 2}, {3, 3}])
@@ -52,53 +54,56 @@ defmodule Expaca.SynchTest do
   XXX.
   ....
   """
-   @glider2 """
-   ....
-   X.X.
-   .XX.
-   .X..
-   """
-   @glider3 """
-   ....
-   ..X.
-   X.X.
-   .XX.
-   """ 
-   @glider4 """
-   ....
-   .X..
-   ..XX
-   .XX.
-   """
-   @glider5 """
-   ....
-   ..X.
-   ...X
-   .XXX
-   """
-
+  @glider2 """
+  ....
+  X.X.
+  .XX.
+  .X..
+  """
+  @glider3 """
+  ....
+  ..X.
+  X.X.
+  .XX.
+  """
+  @glider4 """
+  ....
+  .X..
+  ..XX
+  .XX.
+  """
+  @glider5 """
+  ....
+  ..X.
+  ...X
+  .XXX
+  """
 
   test "diag" do
-    frames = Expaca.grid_synch({3, 3}, @diag, 3)
-    Enum.each(frames, &IO.puts/1)
-    assert [@diag1, @diag2, @diag3] == frames
+    asciis = {3, 3, @diag} |> Expaca.grid_synch(3) |> to_ascii()
+    assert [@diag1, @diag2, @diag3] == asciis
   end
 
   test "blinker" do
-    frames = Expaca.grid_synch({3, 3}, @blinker1, 3)
-    Enum.each(frames, &IO.puts/1)
-    assert [@blinker1, @blinker2, @blinker1] == frames
+    asciis = {3, 3, @blinker1} |> Expaca.grid_synch(3) |> to_ascii()
+    assert [@blinker1, @blinker2, @blinker1] == asciis
   end
 
   test "toad" do
-    frames = Expaca.grid_synch({4, 4}, @toad1, 3)
-    Enum.each(frames, &IO.puts/1)
-    assert [@toad1, @toad2, @toad1] == frames
+    asciis = {4, 4, @toad1} |> Expaca.grid_synch(3) |> to_ascii()
+    assert [@toad1, @toad2, @toad1] == asciis
   end
 
   test "glider" do
-    frames = Expaca.grid_synch({4, 4}, @glider1, 5)
-    Enum.each(frames, &IO.puts/1)
-    assert [@glider1, @glider2, @glider3, @glider4, @glider5] == frames
+    asciis = {4, 4, @glider1} |> Expaca.grid_synch(5) |> to_ascii()
+    assert [@glider1, @glider2, @glider3, @glider4, @glider5] == asciis
+  end
+
+  defp to_ascii(bitmaps) do
+    Enum.map(bitmaps, fn bmp -> 
+      ascii = bmp |> Bitmap.reflect_y() |> Bitmap.to_ascii() 
+      IO.puts(ascii)
+      ascii
+    end)
   end
 end

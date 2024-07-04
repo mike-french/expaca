@@ -3,16 +3,16 @@ defmodule Expaca.Synch.Scell do
   Synchronous cell.
   """
 
-  alias Expaca, as: E
+  alias Expaca.Types, as: X
 
   @doc "Start the synchronous cell process."
-  @spec start(E.location(), pid(), E.generation()) :: pid()
+  @spec start(X.location(), pid(), X.generation()) :: pid()
   def start(loc, grid, ngen) when is_pid(grid) do
     spawn_link(__MODULE__, :connect, [loc, grid, ngen])
   end
 
   # receive our neighborhood from the grid manager
-  @spec connect(E.location(), pid(), E.generation()) :: no_return()
+  @spec connect(X.location(), pid(), X.generation()) :: no_return()
   def connect(loc, grid, ngen) do
     receive do
       {:connect, ^grid, cells} when is_list(cells) -> init(loc, grid, ngen, cells)
@@ -20,7 +20,7 @@ defmodule Expaca.Synch.Scell do
   end
 
   # receive our initial state from the grid manager
-  @spec init(E.location(), pid(), E.generation(), E.neighborhood()) :: no_return()
+  @spec init(X.location(), pid(), X.generation(), X.neighborhood()) :: no_return()
   defp init(loc, grid, ngen, cells) do
     receive do
       {:init, ^grid, state} ->
@@ -34,13 +34,13 @@ defmodule Expaca.Synch.Scell do
   # occ: simple GoL update rule just needs sum of neighborhood occupancy
   # nmsg: counter for receiving messages from neighbors, count down to 0
   @spec scell(
-          loc :: E.location(),
+          loc :: X.location(),
           grid :: pid(),
-          igen :: E.generation(),
-          cells :: E.neighborhood(),
-          state :: E.state(),
+          igen :: X.generation(),
+          cells :: X.neighborhood(),
+          state :: X.state(),
           nmsg :: non_neg_integer(),
-          occ :: E.occupancy()
+          occ :: X.occupancy()
         ) :: no_return()
 
   defp scell(_loc, _grid, 0, _cells, _state, _, _), do: :ok
@@ -60,18 +60,18 @@ defmodule Expaca.Synch.Scell do
     # decrement messages to be received, increment occupancy state
     receive do
       {:update, _loc, instate, ^igen} ->
-        scell(loc, grid, igen, cells, mystate, nmsg - 1, state_update(occ,instate))
+        scell(loc, grid, igen, cells, mystate, nmsg - 1, state_update(occ, instate))
     end
   end
 
   # Game of Life update rule
-  @spec cell_update(E.occupancy(), E.state())  :: E.state()
+  @spec cell_update(X.occupancy(), X.state()) :: X.state()
   defp cell_update(3, _any), do: true
   defp cell_update(2, true), do: true
   defp cell_update(_, _any), do: false
 
   # update occupancy of neighborhood
-  @spec state_update(E.occupancy(), E.state()) :: E.occupancy()
+  @spec state_update(X.occupancy(), X.state()) :: X.occupancy()
   defp state_update(occ, false), do: occ
   defp state_update(occ, true), do: occ + 1
 end
