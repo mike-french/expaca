@@ -117,6 +117,16 @@ from Conway's Game of Life (GoL), which uses simple counts:
 - any cell with 3 occupied neighbors, stays or becomes occupied
 - a live cell with 2 occupied neighbors stays alive
 
+## Output Format
+
+The frames for individual steps are returned as `Exa.Image` bitmaps.
+The utilities in `Exa.Image.Bitmap` can be used to:
+- convert to ASCII strings
+- convert to 1- or 3-byte images
+- write the images to file
+
+See the `synch_test.exs` test suite for examples.
+
 ## Synch CA
 
 Even though the topic of the repo is Asynch CA, 
