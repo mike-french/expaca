@@ -46,6 +46,7 @@ defmodule Expaca do
 
   The output is a sequence of bitmaps.
   Use `Exa.Image.Bitmap` to convert to ASCII art and 1- or 3-byte images.
+  Use `Exa.Image.Video` to make a video, if you have ffmpeg installed.
   """
   @spec grid_synch(X.frame() | X.asciiart() | %I.Bitmap{}, X.generation()) :: [%I.Bitmap{}]
   def grid_synch(frame0, ngen \\ 100)
@@ -72,12 +73,8 @@ defmodule Expaca do
   @spec recv_frames(X.dimensions(), [%I.Bitmap{}]) :: [%I.Bitmap{}]
   defp recv_frames({w, h} = dims, bitmaps \\ [], i \\ 1) do
     receive do
-      {:frame, fset} ->
-        IO.inspect(i, label: "frame")
-        recv_frames(dims, [Frame.to_bitmap({w, h, fset}) | bitmaps], i + 1)
-
-      :end_of_life ->
-        Enum.reverse(bitmaps)
+      {:frame, fset} ->        recv_frames(dims, [Frame.to_bitmap({w, h, fset}) | bitmaps], i + 1)
+      :end_of_life ->        Enum.reverse(bitmaps)
     end
   end
 end

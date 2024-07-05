@@ -3,7 +3,7 @@ defmodule Expaca.Synch.Sgrid do
   Synchronous grid implemented as a 
   connected set of asynchronous processes.
   """
-
+  require Logger
   alias Expaca.Types, as: X
   alias Expaca.Synch.Scell
 
@@ -52,7 +52,9 @@ defmodule Expaca.Synch.Sgrid do
   def sgrid(client, dims, grid, igen, 0, frame) do
     # end of frame for this generation 
     # report to client, decrement generation and initialize next frame
+    Logger.info("sgrid frame #{igen}")
     send(client, {:frame, frame})
+    :erlang.garbage_collect()
     sgrid(client, dims, grid, igen - 1, map_size(grid), MapSet.new())
   end
 
@@ -60,7 +62,6 @@ defmodule Expaca.Synch.Sgrid do
     # build a frame from all cell updates
     receive do
       {:update, loc, state, ^igen} ->
-        IO.inspect(state, label: "#{loc}")
         new_frame = frame_update(frame, loc, state)
         sgrid(client, dims, grid, igen, nmsg - 1, new_frame)
     end

@@ -13,7 +13,8 @@ defmodule Expaca.SynchTest do
   @png_out_dir ["test", "output"]
 
   defp out_png(dir, name, i) do
-    Exa.File.join(@png_out_dir ++ [dir], "#{name}-#{i}", @filetype_png)
+    n = String.pad_leading(Integer.to_string(i), 4, "0")
+    Exa.File.join(@png_out_dir ++ [dir], "#{name}_#{n}", @filetype_png)
   end
 
   doctest Expaca
@@ -120,15 +121,16 @@ defmodule Expaca.SynchTest do
     assert_ascii([@glider1, @glider2, @glider3, @glider4, @glider5], asciis)
   end
 
+  @tag timeout: 90_000
   test "big glider image" do
-    d = 8
+    d = 50
 
     init =
       Enum.reduce(@glider, MapSet.new(), fn {i, j}, fset ->
         MapSet.put(fset, {i, j + d - 3})
       end)
 
-    bitmaps = Expaca.grid_synch({d, d, init}, 3*d)
+    bitmaps = Expaca.grid_synch({d, d, init}, 3 * d)
     to_image(bitmaps)
   end
 
@@ -168,7 +170,7 @@ defmodule Expaca.SynchTest do
       # |> IO.inspect(label: "rgb")
       |> Resize.resize(scale)
       # |> IO.inspect(label: "scale")
-      |> ImageWriter.to_file(out_png("glider", "glide", i))
+      |> ImageWriter.to_file(out_png("glider", "glider", i))
 
       i + 1
     end)

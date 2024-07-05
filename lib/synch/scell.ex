@@ -23,10 +23,12 @@ defmodule Expaca.Synch.Scell do
   # note that the initial frame is sent back to the grid
   @spec init(X.location(), pid(), X.generation(), X.neighborhood()) :: no_return()
   defp init(loc, grid, ngen, cells) do
+    ncells = length(cells)
     receive do
       {:init, ^grid, state} ->
-        for pid <- [grid | cells], do: send(pid, {:update, loc, state, ngen})
-        scell(loc, grid, ngen, cells, state, length(cells), 0)
+        msg = {:update, loc, state, ngen}
+        for pid <- [grid | cells], do: send(pid, msg)
+        scell(loc, grid, ngen, cells, state, ncells, ncells, 0)
     end
   end
 
@@ -40,28 +42,31 @@ defmodule Expaca.Synch.Scell do
           igen :: X.generation(),
           cells :: X.neighborhood(),
           state :: X.state(),
+          ncells :: non_neg_integer(),
           nmsg :: non_neg_integer(),
           occ :: X.occupancy()
         ) :: no_return()
 
-  defp scell(_loc, _grid, 0, _cells, _state, _, _), do: :ok
+  defp scell(_loc, _grid, 0, _cells, _state, _, _, _), do: :ok
 
-  defp scell(loc, grid, igen, cells, state, 0, occ) do
+  defp scell(loc, grid, igen, cells, state, ncells, 0, occ) do
     # received all messages from the neighborhood
     # calculate state for this generation 
     # notify grid manager and all neighbors
     new_igen = igen - 1
     new_state = cell_update(occ, state)
-    for pid <- [grid | cells], do: send(pid, {:update, loc, new_state, new_igen})
-    scell(loc, grid, new_igen, cells, new_state, length(cells), 0)
+    msg = {:update, loc, new_state, new_igen}
+    for pid <- [grid | cells], do: send(pid, msg)
+    scell(loc, grid, new_igen, cells, new_state, ncells, ncells, 0)
   end
 
-  defp scell(loc, grid, igen, cells, mystate, nmsg, occ) do
+  defp scell(loc, grid, igen, cells, mystate, ncells, nmsg, occ) do
     # receive state message from neighbors for this generation
     # decrement messages to be received, increment occupancy state
     receive do
       {:update, _loc, instate, ^igen} ->
-        scell(loc, grid, igen, cells, mystate, nmsg - 1, state_update(occ, instate))
+        new_state = state_update(occ, instate)
+        scell(loc, grid, igen, cells, mystate, ncells, nmsg - 1, new_state)
     end
   end
 

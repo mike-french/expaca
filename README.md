@@ -125,7 +125,11 @@ The utilities in `Exa.Image.Bitmap` can be used to:
 - convert to 1- or 3-byte images
 - write the images to file
 
-See the `synch_test.exs` test suite for examples.
+Then use `Exa.Image.Video` to make a video, 
+if you have [ffmpeg](https://ffmpeg.org/download.html) 
+installed on the system path.
+
+See the test suite for examples.
 
 ## Synch CA
 
