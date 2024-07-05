@@ -36,9 +36,10 @@ defmodule Expaca.MixProject do
     [
       # runtime code dependencies ------------------
 
-      {:exa, git: "https://github.com/red-jade/exa_core.git", tag: "v0.1.1"},
-      {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.1.1"},
-      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.1.2"},
+      {:exa, git: "https://github.com/red-jade/exa_core.git", tag: "v0.1.2"},
+      {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.1.2"},
+      {:exa_color, git: "https://github.com/red-jade/exa_color.git", tag: "v0.1.2"},
+      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.1.3"},
 
       # building, documenting ----------
 

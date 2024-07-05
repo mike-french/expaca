@@ -70,10 +70,14 @@ defmodule Expaca do
   # -----------------
 
   @spec recv_frames(X.dimensions(), [%I.Bitmap{}]) :: [%I.Bitmap{}]
-  defp recv_frames({w, h} = dims, bitmaps \\ []) do
+  defp recv_frames({w, h} = dims, bitmaps \\ [], i \\ 1) do
     receive do
-      {:frame, fset} -> recv_frames(dims, [Frame.to_bitmap({w, h, fset}) | bitmaps])
-      :end_of_life -> Enum.reverse(bitmaps)
+      {:frame, fset} ->
+        IO.inspect(i, label: "frame")
+        recv_frames(dims, [Frame.to_bitmap({w, h, fset}) | bitmaps], i + 1)
+
+      :end_of_life ->
+        Enum.reverse(bitmaps)
     end
   end
 end

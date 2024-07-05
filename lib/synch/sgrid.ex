@@ -60,6 +60,7 @@ defmodule Expaca.Synch.Sgrid do
     # build a frame from all cell updates
     receive do
       {:update, loc, state, ^igen} ->
+        IO.inspect(state, label: "#{loc}")
         new_frame = frame_update(frame, loc, state)
         sgrid(client, dims, grid, igen, nmsg - 1, new_frame)
     end

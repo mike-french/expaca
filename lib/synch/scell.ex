@@ -20,6 +20,7 @@ defmodule Expaca.Synch.Scell do
   end
 
   # receive our initial state from the grid manager
+  # note that the initial frame is sent back to the grid
   @spec init(X.location(), pid(), X.generation(), X.neighborhood()) :: no_return()
   defp init(loc, grid, ngen, cells) do
     receive do

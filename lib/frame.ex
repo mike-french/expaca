@@ -31,12 +31,21 @@ defmodule Expaca.Frame do
     {w, h, fset}
   end
 
+  @doc "Convert a frame to a Bitmap."
+  @spec to_bitmap(X.frame()) :: %I.Bitmap{}
+  def to_bitmap({w, h, f}) when is_size(w) and is_size(h) and is_struct(f, MapSet) do
+    Bitmap.new(w, h, fn {i, j} -> MapSet.member?(f, {i + 1, j + 1}) end)
+  end
+
   @doc "Convert an ascii string to a frame."
   @spec from_ascii(X.asciiart()) :: X.frame()
   def from_ascii({w, h, str})
       when is_size(w) and is_size(h) and is_string(str) and
-             byte_size(str) == h * (w + 1) do
-    {w, h, asc(str, 1, h, MapSet.new())}
+             (byte_size(str) == h * (w + 1) or
+                byte_size(str) == h * (w + 2)) do
+    str = String.replace(str, "\r", "")
+    fset = asc(str, 1, h, MapSet.new())
+    {w, h, fset}
   end
 
   @spec asc(String.t(), E.index1(), E.index1(), MapSet.t()) :: MapSet.t()
@@ -45,15 +54,18 @@ defmodule Expaca.Frame do
   defp asc(<<?\n, rest::binary>>, _i, j, f), do: asc(rest, 1, j - 1, f)
   defp asc(<<>>, _i, _j, f), do: f
 
-  @doc "Convert a frame to a Bitmap."
-  @spec to_bitmap(X.frame()) :: %I.Bitmap{}
-  def to_bitmap({w, h, f}) when is_size(w) and is_size(h) and is_struct(f, MapSet) do
-    Bitmap.new(w, h, fn {i, j} -> MapSet.member?(f, {i + 1, j + 1}) end)
-  end
-
   @doc "Convert a frame to an ascii string."
   @spec to_ascii(X.frame()) :: String.t()
   def to_ascii(frame) do
     frame |> to_bitmap() |> Bitmap.reflect_y() |> Bitmap.to_ascii(?X, ?.)
+  end
+
+  @doc """
+  Compare ascii strings for equality, 
+  allowing different line endings.
+  """
+  @spec ascii_equals?(String.t(), String.t()) :: bool()
+  def ascii_equals?(s1, s2) when is_string(s1) and is_string(s2) do
+    s1 == s2 or String.replace(s1, "\r", "") == String.replace(s2, "\r", "")
   end
 end
