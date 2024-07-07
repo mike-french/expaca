@@ -5,7 +5,7 @@ defmodule Expaca.MixProject do
     [
       app: :expaca,
       name: "Expaca",
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.15",
       erlc_options: [:verbose, :report_errors, :report_warnings, :export_all],
       start_permanent: Mix.env() == :prod,
@@ -39,7 +39,7 @@ defmodule Expaca.MixProject do
       {:exa, git: "https://github.com/red-jade/exa_core.git", tag: "v0.1.2"},
       {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.1.2"},
       {:exa_color, git: "https://github.com/red-jade/exa_color.git", tag: "v0.1.2"},
-      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.1.3"},
+      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.1.4"},
 
       # building, documenting ----------
 

@@ -24,6 +24,7 @@ defmodule Expaca.Synch.Scell do
   @spec init(X.location(), pid(), X.generation(), X.neighborhood()) :: no_return()
   defp init(loc, grid, ngen, cells) do
     ncells = length(cells)
+
     receive do
       {:init, ^grid, state} ->
         msg = {:update, loc, state, ngen}

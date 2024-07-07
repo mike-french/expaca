@@ -3,7 +3,7 @@ defmodule Expaca.VideoTest do
 
   use Exa.Image.Constants
 
-  alias Expaca.Video
+  alias Exa.Image.Video
 
   @filetype_mp4 "mp4"
 
@@ -11,15 +11,16 @@ defmodule Expaca.VideoTest do
 
   def file_glob(dir, name) do
     (@png_out_dir ++ [dir])
-    |> Exa.File.join(name<>"-*", @filetype_png)
+    |> Exa.File.join(name <> "-*", @filetype_png)
     |> Exa.String.wraps("'", "'")
   end
 
   def file_iseq(dir, name) do
     (@png_out_dir ++ [dir])
-    |> Exa.File.join(name<>"_%04d", @filetype_png)
+    |> Exa.File.join(name <> "_%04d", @filetype_png)
+
     # protect the glob * symbol
-    #|> Exa.String.wraps("'", "'")
+    # |> Exa.String.wraps("'", "'")
   end
 
   def out_mp4(dir, name) do
@@ -27,7 +28,7 @@ defmodule Expaca.VideoTest do
   end
 
   test "basic" do
-    cmd = Video.ensure_ffmpeg!()
+    cmd = Video.ensure_installed!(:ffmpeg)
     IO.inspect(cmd, label: "FFMPEG")
     assert not is_nil(cmd)
   end
@@ -36,7 +37,7 @@ defmodule Expaca.VideoTest do
   # to populate the glider images
 
   test "glider" do
-    Logger.configure([level: :error])
+    Logger.configure(level: :error)
     seq = file_iseq("glider", "glider")
     mp4 = out_mp4("glider", "glider")
 
@@ -53,6 +54,6 @@ defmodule Expaca.VideoTest do
       pix_fmt: "yuv420p"
     ]
 
-    Video.create(mp4, args)
+    Video.from_files(mp4, args)
   end
 end

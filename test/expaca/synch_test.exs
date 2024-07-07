@@ -163,13 +163,9 @@ defmodule Expaca.SynchTest do
 
     Enum.reduce(bitmaps, 1, fn bmp, i ->
       bmp
-      # |> IO.inspect(label: "init")
       |> Bitmap.reflect_y()
-      # |> IO.inspect(label: "reflect")
       |> Bitmap.to_image(:rgb, fg, bg)
-      # |> IO.inspect(label: "rgb")
       |> Resize.resize(scale)
-      # |> IO.inspect(label: "scale")
       |> ImageWriter.to_file(out_png("glider", "glider", i))
 
       i + 1
