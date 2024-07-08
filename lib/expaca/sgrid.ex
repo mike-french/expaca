@@ -1,11 +1,11 @@
-defmodule Expaca.Synch.Sgrid do
+defmodule Expaca.Sgrid do
   @moduledoc """
   Synchronous grid implemented as a 
   connected set of asynchronous processes.
   """
   require Logger
   alias Expaca.Types, as: X
-  alias Expaca.Synch.Scell
+  alias Expaca.Scell
   alias Expaca.Frame
 
   @doc "Start the synchronous grid process."

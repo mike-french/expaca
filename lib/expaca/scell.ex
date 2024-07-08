@@ -1,4 +1,4 @@
-defmodule Expaca.Synch.Scell do
+defmodule Expaca.Scell do
   @moduledoc """
   Synchronous cell.
   """

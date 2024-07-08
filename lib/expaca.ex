@@ -8,7 +8,7 @@ defmodule Expaca do
   alias Expaca.Types, as: X
 
   alias Expaca.Frame
-  alias Expaca.Synch.Sgrid
+  alias Expaca.Sgrid
 
   # ----------------
   # public interface
