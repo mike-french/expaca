@@ -27,47 +27,50 @@ defmodule Expaca.Synch.Scell do
 
     receive do
       {:init, ^grid, state} ->
-        msg = {:update, loc, state, ngen}
+        msg = {:update, loc, state, 0}
         for pid <- [grid | cells], do: send(pid, msg)
-        scell(loc, grid, ngen, cells, state, ncells, ncells, 0)
+        scell(loc, grid, ngen, 0, cells, state, ncells, ncells, 0)
     end
   end
 
   # main loop
-  # igen: generation number, count down to 0
-  # occ: simple GoL update rule just needs sum of neighborhood occupancy
+  # ngen: target number of generations
+  # igen: generation number, count up from 0
+  # ncells: length(cells) the number of messages for each update
   # nmsg: counter for receiving messages from neighbors, count down to 0
+  # occ: simple GoL update rule just needs sum of neighborhood occupancy
   @spec scell(
           loc :: X.location(),
           grid :: pid(),
-          igen :: X.generation(),
+          ngen :: X.generation(),
+          igen :: non_neg_integer(),
           cells :: X.neighborhood(),
           state :: X.state(),
-          ncells :: non_neg_integer(),
+          ncells :: 3..8,
           nmsg :: non_neg_integer(),
           occ :: X.occupancy()
         ) :: no_return()
 
-  defp scell(_loc, _grid, 0, _cells, _state, _, _, _), do: :ok
+  defp scell(_loc, _grid, ngen, ngen, _cells, _state, _, _, _), do: :ok
 
-  defp scell(loc, grid, igen, cells, state, ncells, 0, occ) do
+  defp scell(loc, grid, ngen, igen, cells, state, ncells, 0, occ) do
     # received all messages from the neighborhood
     # calculate state for this generation 
     # notify grid manager and all neighbors
-    new_igen = igen - 1
+    new_igen = igen + 1
     new_state = cell_update(occ, state)
     msg = {:update, loc, new_state, new_igen}
     for pid <- [grid | cells], do: send(pid, msg)
-    scell(loc, grid, new_igen, cells, new_state, ncells, ncells, 0)
+    scell(loc, grid, ngen, new_igen, cells, new_state, ncells, ncells, 0)
   end
 
-  defp scell(loc, grid, igen, cells, mystate, ncells, nmsg, occ) do
+  defp scell(loc, grid, ngen, igen, cells, mystate, ncells, nmsg, occ) do
     # receive state message from neighbors for this generation
     # decrement messages to be received, increment occupancy state
     receive do
       {:update, _loc, instate, ^igen} ->
         new_state = state_update(occ, instate)
-        scell(loc, grid, igen, cells, mystate, ncells, nmsg - 1, new_state)
+        scell(loc, grid, ngen, igen, cells, mystate, ncells, nmsg - 1, new_state)
     end
   end
 

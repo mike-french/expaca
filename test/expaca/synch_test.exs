@@ -122,7 +122,7 @@ defmodule Expaca.SynchTest do
   end
 
   @tag timeout: 90_000
-  test "big glider image" do
+  test "big glider image batch" do
     d = 50
 
     init =
@@ -131,12 +131,44 @@ defmodule Expaca.SynchTest do
       end)
 
     bitmaps = Expaca.grid_synch({d, d, init}, 3 * d)
-    to_image(bitmaps)
+    to_images("glider", bitmaps)
+  end
+
+  @tag timeout: 90_000
+  test "big glider image stream" do
+    d = 50
+
+    init =
+      Enum.reduce(@glider, MapSet.new(), fn {i, j}, fset ->
+        MapSet.put(fset, {i, j + d - 3})
+      end)
+
+    :ok = Expaca.grid_synch({d, d, init}, 3 * d, self())
+    recv_frames(0)
   end
 
   # -----------------
   # private functions 
   # -----------------
+
+  @fgchar ?X
+  @bgchar ?.
+
+  @fgcol Col3b.gray_pc(90)
+  @bgcol Col3b.gray_pc(25)
+
+  @out_subdir "glider"
+
+  defp recv_frames(igen) do
+    receive do
+      {:frame, ^igen, bmp} ->
+        bmp2file("stream", bmp, igen)
+        recv_frames(igen + 1)
+
+      :end_of_frames ->
+        :ok
+    end
+  end
 
   defp assert_ascii(as1, as2)
        when is_list(as1) and is_list(as2) and
@@ -147,28 +179,25 @@ defmodule Expaca.SynchTest do
   end
 
   defp to_ascii(bitmaps) do
-    fg = ?X
-    bg = ?.
-
     Enum.map(bitmaps, fn bmp ->
-      ascii = bmp |> Bitmap.reflect_y() |> Bitmap.to_ascii(fg, bg)
+      ascii = bmp |> Bitmap.reflect_y() |> Bitmap.to_ascii(@fgchar, @bgchar)
       IO.puts(ascii)
       ascii
     end)
   end
 
-  defp to_image(bitmaps, scale \\ 4) do
-    fg = Col3b.gray_pc(90)
-    bg = Col3b.gray_pc(25)
-
-    Enum.reduce(bitmaps, 1, fn bmp, i ->
-      bmp
-      |> Bitmap.reflect_y()
-      |> Bitmap.to_image(:rgb, fg, bg)
-      |> Resize.resize(scale)
-      |> ImageWriter.to_file(out_png("glider", "glider", i))
-
+  defp to_images(name, bmps) do
+    Enum.reduce(bmps, 1, fn bmp, i ->
+      bmp2file(name, bmp, i)
       i + 1
     end)
+  end
+
+  defp bmp2file(name, bmp, i, scale \\ 4) do
+    bmp
+    |> Bitmap.reflect_y()
+    |> Bitmap.to_image(:rgb, @fgcol, @bgcol)
+    |> Resize.resize(scale)
+    |> ImageWriter.to_file(out_png(@out_subdir, name, i))
   end
 end

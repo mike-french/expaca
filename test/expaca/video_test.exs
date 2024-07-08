@@ -19,6 +19,7 @@ defmodule Expaca.VideoTest do
     (@png_out_dir ++ [dir])
     |> Exa.File.join(name <> "_%04d", @filetype_png)
 
+    # globbing not available on Windows
     # protect the glob * symbol
     # |> Exa.String.wraps("'", "'")
   end
@@ -33,8 +34,10 @@ defmodule Expaca.VideoTest do
     assert not is_nil(cmd)
   end
 
+  # **************************************
   # requires that synch_test be run first
   # to populate the glider images
+  # **************************************
 
   test "glider" do
     Logger.configure(level: :error)
