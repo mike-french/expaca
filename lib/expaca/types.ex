@@ -28,13 +28,6 @@ defmodule Expaca.Types do
   @typedoc "The state of a single cell: occupied or empty."
   @type state() :: bool()
 
-  @typedoc """
-  The number of occupied neighbors for cell.
-  For Game of Life rule, we only care about 
-  the 8-connected Moore neighborhood.
-  """
-  @type occupancy() :: 0..8
-
   @typedoc "A 2D cell location as 1-based positions."
   @type location() :: S.pos2i()
 
@@ -45,6 +38,12 @@ defmodule Expaca.Types do
   defguard is_dims(w, h)
            when is_size(w) and 3 <= w and w <= @maxdim and
                   is_size(h) and 3 <= h and h <= @maxdim
+
+  @typedoc "The number of occupied neighbors for cell."
+  @type occupancy_count() :: 0..8
+
+  @typedoc "Map of neighborhood occupancy."
+  @type occupancy_map() :: %{location() => state()}
 
   @typedoc """
   A frame in the simulation.
@@ -77,9 +76,6 @@ defmodule Expaca.Types do
   """
   @type grid() :: %{location() => pid()}
 
-  @typedoc """
-  The neighborhood of a cell is a 
-  list of its 3-8 adjacent processes.
-  """
+  @typedoc "Simple neighborhood is just a list of 3-8 adjacent processes."
   @type neighborhood() :: [pid(), ...]
 end

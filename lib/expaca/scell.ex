@@ -5,6 +5,8 @@ defmodule Expaca.Scell do
 
   alias Expaca.Types, as: X
 
+  alias Expaca.Rules
+
   @doc "Start the synchronous cell process."
   @spec start(X.location(), pid(), X.generation()) :: pid()
   def start(loc, grid, ngen) when is_pid(grid) do
@@ -20,7 +22,7 @@ defmodule Expaca.Scell do
   end
 
   # receive our initial state from the grid manager
-  # note that the initial frame is sent back to the grid
+  # notify neighboring cells to start the simulation
   @spec init(X.location(), pid(), X.generation(), X.neighborhood()) :: no_return()
   defp init(loc, grid, ngen, cells) do
     ncells = length(cells)
@@ -28,60 +30,54 @@ defmodule Expaca.Scell do
     receive do
       {:init, ^grid, state} ->
         msg = {:update, loc, state, 0}
+        # the initial frame is also sent back to the grid
         for pid <- [grid | cells], do: send(pid, msg)
         scell(loc, grid, ngen, 0, cells, state, ncells, ncells, 0)
     end
   end
 
   # main loop
-  # ngen: target number of generations
-  # igen: generation number, count up from 0
-  # ncells: length(cells) the number of messages for each update
-  # nmsg: counter for receiving messages from neighbors, count down to 0
-  # occ: simple GoL update rule just needs sum of neighborhood occupancy
   @spec scell(
+          # location in the grid
           loc :: X.location(),
+          # process address of the grid manager
           grid :: pid(),
+          # total number of generations to simulate
           ngen :: X.generation(),
+          # generation number, count up from 0
           igen :: non_neg_integer(),
+          # list of neighborhood process addresses
           cells :: X.neighborhood(),
+          # boolean state: occupied (true) or empty (false)
           state :: X.state(),
+          # size of the neighborhood, length(cells), no. of messages per step
           ncells :: 3..8,
+          # counter for receiving messages from neighbors, count down to 0
           nmsg :: non_neg_integer(),
-          occ :: X.occupancy()
+          # cumulative sum of neighborhood occupancy
+          occ :: X.occupancy_count()
         ) :: no_return()
 
   defp scell(_loc, _grid, ngen, ngen, _cells, _state, _, _, _), do: :ok
 
   defp scell(loc, grid, ngen, igen, cells, state, ncells, 0, occ) do
     # received all messages from the neighborhood
-    # calculate state for this generation 
+    # calculate state for this generation, ignore change
     # notify grid manager and all neighbors
     new_igen = igen + 1
-    new_state = cell_update(occ, state)
+    new_state = Rules.cell_update(occ, state)
     msg = {:update, loc, new_state, new_igen}
     for pid <- [grid | cells], do: send(pid, msg)
     scell(loc, grid, ngen, new_igen, cells, new_state, ncells, ncells, 0)
   end
 
-  defp scell(loc, grid, ngen, igen, cells, mystate, ncells, nmsg, occ) do
+  defp scell(loc, grid, ngen, igen, cells, state, ncells, nmsg, occ) do
     # receive state message from neighbors for this generation
     # decrement messages to be received, increment occupancy state
     receive do
       {:update, _loc, instate, ^igen} ->
-        new_state = state_update(occ, instate)
-        scell(loc, grid, ngen, igen, cells, mystate, ncells, nmsg - 1, new_state)
+        new_occ = if instate, do: occ + 1, else: occ
+        scell(loc, grid, ngen, igen, cells, state, ncells, nmsg - 1, new_occ)
     end
   end
-
-  # Game of Life update rule
-  @spec cell_update(X.occupancy(), X.state()) :: X.state()
-  defp cell_update(3, _any), do: true
-  defp cell_update(2, true), do: true
-  defp cell_update(_, _any), do: false
-
-  # update occupancy of neighborhood
-  @spec state_update(X.occupancy(), X.state()) :: X.occupancy()
-  defp state_update(occ, false), do: occ
-  defp state_update(occ, true), do: occ + 1
 end

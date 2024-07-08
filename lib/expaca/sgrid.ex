@@ -4,24 +4,30 @@ defmodule Expaca.Sgrid do
   connected set of asynchronous processes.
   """
   require Logger
+
   alias Expaca.Types, as: X
+
   alias Expaca.Scell
   alias Expaca.Frame
+  alias Expaca.Rules
 
   @doc "Start the synchronous grid process."
   @spec start(X.frame(), X.generation(), nil | pid()) :: pid()
-  def start({w, h, fset0}, ngen, client) do
+  def start(frame0, ngen, client) do
     client =
       cond do
         is_nil(client) -> self()
         is_pid(client) -> client
       end
 
-    spawn_link(__MODULE__, :init, [client, {w, h}, ngen, fset0])
+    spawn_link(__MODULE__, :init, [frame0, ngen, client])
   end
 
-  @spec init(pid(), X.dimensions(), X.generation(), MapSet.t()) :: no_return()
-  def init(client, {ni, nj} = dims, ngen, fset0) do
+  @spec init(X.frame(), X.generation(), pid()) :: no_return()
+  def init({ni, nj, fset0}, ngen, client) do
+    self = self()
+    dims = {ni, nj}
+
     # initialize the grid, start all cells
     grid =
       for j <- 1..nj, i <- 1..ni, loc = {i, j}, into: %{} do
@@ -30,12 +36,13 @@ defmodule Expaca.Sgrid do
 
     # send the cells their neighborhood connections
     for {loc, pid} <- grid do
-      send(pid, {:connect, self(), neighborhood(loc, dims, grid)})
+      cells = Rules.neighborhood(loc, dims, grid)
+      send(pid, {:connect, self, cells})
     end
 
-    # send the initial state and trigger them to start evolving
+    # send the initial state and start evolving
     for j <- 1..nj, i <- 1..ni, loc = {i, j} do
-      send(Map.fetch!(grid, loc), {:init, self(), MapSet.member?(fset0, loc)})
+      send(Map.fetch!(grid, loc), {:init, self, MapSet.member?(fset0, loc)})
     end
 
     sgrid(client, dims, grid, ngen, 0, map_size(grid), MapSet.new())
@@ -67,36 +74,11 @@ defmodule Expaca.Sgrid do
   end
 
   def sgrid(client, dims, grid, ngen, igen, nmsg, fset) do
-    # build a frame from all cell updates
+    # accumulate a frame from all cell updates
     receive do
       {:update, loc, state, ^igen} ->
-        new_fset = frame_update(fset, loc, state)
+        new_fset = if state, do: MapSet.put(fset, loc), else: fset
         sgrid(client, dims, grid, ngen, igen, nmsg - 1, new_fset)
     end
   end
-
-  # isotropic homogeneous neghborhood, just use list of pids
-  # for complex rules, use map of delta => pid
-  # for cyclic boundary conditions:
-  # replace filters with modulo arithmetic
-  @spec neighborhood(X.location(), X.dimensions(), X.grid()) :: X.neighborhood()
-  defp neighborhood({i, j}, {ni, nj}, grid) do
-    for di <- -1..1,
-        dj <- -1..1,
-        not (di == 0 and dj == 0),
-        ii = i + di,
-        jj = j + dj,
-        1 <= ii,
-        ii <= ni,
-        1 <= jj,
-        jj <= nj,
-        into: [] do
-      Map.fetch!(grid, {ii, jj})
-    end
-  end
-
-  # set a new boolean state value in a frame set of occupied cells
-  @spec frame_update(MapSet.t(), X.location(), X.state()) :: MapSet.t()
-  defp frame_update(fset, _loc, false), do: fset
-  defp frame_update(fset, loc, true), do: MapSet.put(fset, loc)
 end
