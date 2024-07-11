@@ -90,12 +90,12 @@ frame set representation:
 ASCII art version:
 
  ```
-  \"\"\"
+  """
   .X..
   ..X.
   XXX.
   ....
-  \"\"\"
+  """
   ```
 
 A set is used internally for frames, 
@@ -127,7 +127,7 @@ The utilities in `Exa.Image.Bitmap` can be used to:
 - convert to 1- or 3-byte images
 - write the images to file
 
-Then use `Exa.Image.Video` to make a video, 
+Then use `Exa.Image.Video` to make a video or animated GIF, 
 if you have [ffmpeg](https://ffmpeg.org/download.html) 
 installed on the system path.
 
