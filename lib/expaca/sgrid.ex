@@ -31,7 +31,8 @@ defmodule Expaca.Sgrid do
     # initialize the grid, start all cells
     grid =
       for j <- 1..nj, i <- 1..ni, loc = {i, j}, into: %{} do
-        {loc, Scell.start(loc, self(), ngen)}
+        hash = Rules.hash(loc)
+        {loc, Scell.start(hash, self(), ngen)}
       end
 
     # send the cells their neighborhood connections
@@ -77,7 +78,8 @@ defmodule Expaca.Sgrid do
   defp sgrid(client, dims, grid, ngen, igen, nmsg, fset) do
     # accumulate a frame from all cell updates
     receive do
-      {:update, loc, state, ^igen} ->
+      {:update, hash, state, ^igen} ->
+        loc = Rules.unhash(hash)
         new_fset = fset_update(fset, loc, state)
         sgrid(client, dims, grid, ngen, igen, nmsg - 1, new_fset)
     end

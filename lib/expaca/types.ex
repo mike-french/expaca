@@ -34,6 +34,13 @@ defmodule Expaca.Types do
   @typedoc "A 2D cell location as 1-based positions."
   @type location() :: S.pos2i()
 
+  @typedoc """
+  A compressed encoding of the location.
+  A 24-bit positive integer,
+  so bitmap dimension must be less than 2^12^ = 4096.
+  """
+  @type ijhash() :: integer()
+
   # TODO - push this into Exa Image?
   @typedoc "Dimensions of the grid: width, height."
   @type dimensions() :: {I.size(), I.size()}
@@ -45,8 +52,12 @@ defmodule Expaca.Types do
   @typedoc "The number of occupied neighbors for cell."
   @type occupancy_count() :: 0..8
 
-  @typedoc "Map of neighborhood occupancy."
-  @type occupancy_map() :: %{location() => state()}
+  @typedoc """
+  Map of neighborhood occupancy.
+
+  The key is an integer encoding of the location.
+  """
+  @type occupancy_map() :: %{ijhash() => state()}
 
   @typedoc """
   A frame in the simulation.

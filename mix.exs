@@ -39,7 +39,7 @@ defmodule Expaca.MixProject do
       {:exa, git: "https://github.com/red-jade/exa_core.git", tag: "v0.1.2"},
       {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.1.2"},
       {:exa_color, git: "https://github.com/red-jade/exa_color.git", tag: "v0.1.2"},
-      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.1.4"},
+      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.1.5"},
 
       # building, documenting ----------
 

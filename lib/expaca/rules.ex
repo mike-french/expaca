@@ -5,6 +5,7 @@ defmodule Expaca.Rules do
   The cells still have some implementation details related to these rules,
   so it is a not a truly independent policy module.
   """
+  import Bitwise
 
   alias Expaca.Types, as: X
 
@@ -45,8 +46,16 @@ defmodule Expaca.Rules do
   @spec occupancy(X.occupancy_map()) :: X.occupancy_count()
   def occupancy(hood) do
     Enum.reduce(hood, 0, fn
-      {_pid, false}, occ -> occ
-      {_pid, true}, occ -> occ + 1
+      {_loc, false}, occ -> occ
+      {_loc, true}, occ -> occ + 1
     end)
   end
+
+  @doc "Encode a location as a single small integer."
+  @spec hash(X.location()) :: X.ijhash()
+  def hash({i,j}), do: (i <<< 12) ||| j
+
+  @doc "Decode a single small integer into a location."
+  @spec unhash(X.ijhash()) :: X.location()
+  def unhash(hash), do: {(hash >>> 12) &&& 0xFFF, hash &&& 0xFFF}
 end

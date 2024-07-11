@@ -16,16 +16,28 @@ defmodule Expaca.VideoTest do
     assert not is_nil(cmd)
   end
 
-  test "glider" do
-    seq = file_iseq("s_glider", "s_glider")
-    mp4 = out_mp4("s_glider", "s_glider")
-    to_video(seq, mp4, 12)
+  test "synch glider" do
+    vtest("s_glider", 12)
   end
 
-  test "random" do
-    seq = file_iseq("s_random", "s_random")
-    mp4 = out_mp4("s_random", "s_random")
-    to_video(seq, mp4, 12)
+  test "synch random" do
+    vtest("s_random", 12)
+  end
+
+  test "asynch glider" do
+    vtest("a_glider", 30)
+  end
+
+  test "asynch random" do
+    vtest("a_random", 30)
+  end
+
+  defp vtest(name,frate) do
+    seq = file_iseq(name,name)
+    mp4 = out_mp4(name,name)
+    gif = out_gif(name,name)
+    to_video(seq, mp4, frate)
+    to_gif(seq, gif, frate)
   end
 
   defp to_video(seq,mp4,frate) do
@@ -43,5 +55,24 @@ defmodule Expaca.VideoTest do
     ]
 
     Video.from_files(mp4, args)
+  end
+
+  defp to_gif(seq,gif,frate) do
+
+    args = [
+      loglevel: "error",
+      overwrite: "y",
+      i: seq,
+      framerate: frate,
+      r: frate,
+      pattern_type: "sequence",
+      start_number: "0001",
+      vf: "fps=#{frate},scale=100:-1:flags=lanczos,"<>
+          "split[s0][s1];"<>
+          "[s0]palettegen[p];"<>
+          "[s1][p]paletteuse" 
+    ]
+
+    Video.from_files(gif, args)
   end
 end

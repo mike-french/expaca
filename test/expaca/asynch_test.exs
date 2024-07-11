@@ -65,9 +65,9 @@ defmodule Expaca.AsynchTest do
     {4, 4, @glider1} |> Expaca.evolve(:asynch, 5) |> to_ascii()
   end
 
-  @tag timeout: 90_000
+  @tag timeout: 120_000
   test "big glider image batch" do
-    d = 10
+    d = 20
 
     init =
       Enum.reduce(@glider, MapSet.new(), fn {i, j}, fset ->
@@ -77,9 +77,9 @@ defmodule Expaca.AsynchTest do
     {d, d, init} |> Expaca.evolve(:asynch, 3*d) |> to_images("a_glider")
   end
 
-  @tag timeout: 90_000
+  @tag timeout: 120_000
   test "big glider image stream" do
-    d = 10
+    d = 20
 
     init =
       Enum.reduce(@glider, MapSet.new(), fn {i, j}, fset ->
@@ -90,9 +90,12 @@ defmodule Expaca.AsynchTest do
     recv_frames(0, "a_stream")
   end
 
-  @tag timeout: 90_000
-  test "random" do
-    d = 50
-    random(d, d) |> Expaca.evolve(:asynch, 3 * d) |> to_images("a_random")
+  @tag timeout: 120_000
+  test "random stream" do
+    d = 20
+    init = random(d, d)
+    init |> Exa.Image.Bitmap.to_ascii() |> IO.puts()
+    :ok = Expaca.evolve(init, :asynch, 3 * d, self()) 
+    recv_frames(0, "a_random")
   end
 end

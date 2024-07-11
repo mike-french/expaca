@@ -15,7 +15,7 @@ defmodule Expaca.Agrid do
   alias Expaca.Rules
 
   # number of cell changes to output a new frame
-  @frame_steps 20
+  # @frame_steps 20
 
   @doc "Start the asynchronous grid process."
   @spec start(X.frame(), X.generation(), nil | pid()) :: pid()
@@ -37,7 +37,7 @@ defmodule Expaca.Agrid do
     # initialize the grid, start all cells
     grid =
       for j <- 1..nj, i <- 1..ni, loc = {i, j}, into: %{} do
-        {loc, Acell.start(loc, self)}
+        {loc, loc |> Rules.hash() |> Acell.start(self)}
       end
 
     # send the cells their neighborhood connections
@@ -56,8 +56,7 @@ defmodule Expaca.Agrid do
 
     bmap0 = Frame.to_bitmap(frame0)
     send(client, {:frame, 0, bmap0})
-
-    agrid(client, grid, nstep, 1, map_size(fset0), bmap0)
+    agrid(client, grid, nstep, 1, MapSet.size(fset0), bmap0)
   end
 
   # main loop
@@ -77,7 +76,6 @@ defmodule Expaca.Agrid do
         ) :: no_return()
 
   defp agrid(client, grid, nstep, istep, size, bmap) do
-    IO.inspect({nstep, istep, size})
     # empty frame ends the simulation
     if istep == nstep or size == 0 do
       send(client, :end_of_frames)
@@ -85,14 +83,15 @@ defmodule Expaca.Agrid do
     end
 
     receive do
-      {:update, {i, j}, state} ->
+      {:update, hash, state} ->
+        {i, j} = Rules.unhash(hash)
         bit = if state, do: 1, else: 0
         new_size = size + (2 * bit - 1)
         new_bmap = Bitmap.set_bit(bmap, {i - 1, j - 1}, bit)
         # every few cell updates emit a new bitmap frame
-        if rem(istep, @frame_steps) == 0 do
+        #if rem(istep, @frame_steps) == 0 do
           send(client, {:frame, istep, new_bmap})
-        end
+        #end
         agrid(client, grid, nstep, istep + 1, new_size, new_bmap)
     end
   end

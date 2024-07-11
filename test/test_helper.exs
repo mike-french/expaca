@@ -34,6 +34,10 @@ defmodule Expaca.TestUtil do
     Exa.File.join(@out_dir ++ [dir], name, @filetype_mp4)
   end
 
+  def out_gif(dir, name) do
+    Exa.File.join(@out_dir ++ [dir], name, @filetype_gif)
+  end 
+
   def file_glob(dir, name) do
     (@out_dir ++ [dir])
     |> Exa.File.join(name <> "-*", @filetype_png)
