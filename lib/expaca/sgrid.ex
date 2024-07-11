@@ -59,12 +59,13 @@ defmodule Expaca.Sgrid do
           fset :: MapSet.t()
         ) :: no_return()
 
-  def sgrid(client, _dims, _grid, ngen, ngen, _nmsg, _fset) do
+  defp sgrid(client, _dims, _grid, ngen, ngen, _nmsg, _fset) do
     # end of all generations
     send(client, :end_of_frames)
+    exit(:normal)
   end
 
-  def sgrid(client, {w, h} = dims, grid, ngen, igen, 0, fset) do
+  defp sgrid(client, {w, h} = dims, grid, ngen, igen, 0, fset) do
     # end of frame for this generation 
     # report to client, inrement generation and initialize next frame
     Logger.info("sgrid frame #{igen}")
@@ -73,12 +74,17 @@ defmodule Expaca.Sgrid do
     sgrid(client, dims, grid, ngen, igen + 1, map_size(grid), MapSet.new())
   end
 
-  def sgrid(client, dims, grid, ngen, igen, nmsg, fset) do
+  defp sgrid(client, dims, grid, ngen, igen, nmsg, fset) do
     # accumulate a frame from all cell updates
     receive do
       {:update, loc, state, ^igen} ->
-        new_fset = if state, do: MapSet.put(fset, loc), else: fset
+        new_fset = fset_update(fset, loc, state)
         sgrid(client, dims, grid, ngen, igen, nmsg - 1, new_fset)
     end
   end
+
+  # cumulative update to frame set
+  @spec fset_update(MapSet.t(), X.location(), X.state()) :: MapSet.t()
+  defp fset_update(fset, _loc, false), do: fset
+  defp fset_update(fset, loc, true), do: MapSet.put(fset, loc)
 end

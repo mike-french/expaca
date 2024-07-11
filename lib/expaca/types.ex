@@ -25,6 +25,9 @@ defmodule Expaca.Types do
   # types
   # -----
 
+  @typedoc "The execution mode for the cellular automaton simulation."
+  @type mode() :: :synch | :asynch
+
   @typedoc "The state of a single cell: occupied or empty."
   @type state() :: bool()
 

@@ -31,9 +31,22 @@ defmodule Expaca.Rules do
     end
   end
 
-  @doc "Game of Life update rule."
-  @spec cell_update(X.occupancy_count(), X.state()) :: X.state()
-  def cell_update(3, _), do: true
-  def cell_update(2, true), do: true
-  def cell_update(_, _), do: false
+  @doc "Game of Life update rule, based on occupancy count."
+  @spec count_update(X.occupancy_count(), X.state()) :: X.state()
+  def count_update(3, _), do: true
+  def count_update(2, true), do: true
+  def count_update(_, _), do: false
+
+  @doc "Game of Life update rule, based on occupancy map."
+  @spec hood_update(X.occupancy_map(), X.state()) :: X.state()
+  def hood_update(hood, state), do: hood |> occupancy() |> count_update(state)
+
+  @doc "Get occupancy from neighborhood map."
+  @spec occupancy(X.occupancy_map()) :: X.occupancy_count()
+  def occupancy(hood) do
+    Enum.reduce(hood, 0, fn
+      {_pid, false}, occ -> occ
+      {_pid, true}, occ -> occ + 1
+    end)
+  end
 end

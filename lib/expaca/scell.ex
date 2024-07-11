@@ -58,14 +58,16 @@ defmodule Expaca.Scell do
           occ :: X.occupancy_count()
         ) :: no_return()
 
-  defp scell(_loc, _grid, ngen, ngen, _cells, _state, _, _, _), do: :ok
+  defp scell(_loc, _grid, ngen, ngen, _cells, _state, _, _, _) do 
+    exit(:normal)
+  end
 
   defp scell(loc, grid, ngen, igen, cells, state, ncells, 0, occ) do
     # received all messages from the neighborhood
     # calculate state for this generation, ignore change
     # notify grid manager and all neighbors
     new_igen = igen + 1
-    new_state = Rules.cell_update(occ, state)
+    new_state = Rules.count_update(occ, state)
     msg = {:update, loc, new_state, new_igen}
     for pid <- [grid | cells], do: send(pid, msg)
     scell(loc, grid, ngen, new_igen, cells, new_state, ncells, ncells, 0)

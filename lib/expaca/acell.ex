@@ -24,9 +24,9 @@ defmodule Expaca.Acell do
   defp init(loc, grid, cells) do
     receive do
       {:init, ^grid, state} ->
-        msg = {:update0, loc, state}
         # notify neighboring cells 
         # the initial frame is not sent back to the grid
+        msg = {:update0, loc, state}
         for pid <- cells, do: send(pid, msg)
         context(loc, grid, cells, state, length(cells), %{})
     end
@@ -42,11 +42,7 @@ defmodule Expaca.Acell do
           X.occupancy_map()
         ) :: no_return()
 
-  defp context(loc, grid, cells, state, 0, hood) do
-    acell(loc, grid, cells, state, hood)
-  end
-
-  defp context(loc, grid, cells, state, nmsg, hood) do
+  defp context(loc, grid, cells, state, nmsg, hood) when nmsg > 0 do
     receive do
       {:update0, inloc, instate} ->
         new_hood = Map.put(hood, inloc, instate)
@@ -54,9 +50,13 @@ defmodule Expaca.Acell do
     end
   end
 
+  defp context(loc, grid, cells, state, 0, hood) do
+    acell(loc, grid, cells, state, hood)
+  end
+
   # main loop
-  # there really is no fixed number of generations here
-  # acell continues until the grid exits and shuts down the simulation
+  # there is no fixed number of generations 
+  # continue until the grid exits and shuts down the simulation
   @spec acell(
           # location in the grid
           loc :: X.location(),
@@ -71,26 +71,21 @@ defmodule Expaca.Acell do
         ) :: no_return()
 
   defp acell(loc, grid, cells, state, hood) do
+    #IO.inspect({loc, state})
+
+    # only send an update when the local state has changed
+    new_state = Rules.hood_update(hood, state)
+
+    if new_state != state do
+      msg = {:update, loc, new_state}
+      for pid <- [grid | cells], do: send(pid, msg)
+    end
+
     # receive state change message from neighbors 
     receive do
       {:update, inloc, instate} ->
         new_hood = Map.put(hood, inloc, instate)
-        new_state = new_hood |> occupancy() |> Rules.cell_update(state)
-        # only send an update when the local state has changed
-        if new_state != state do
-          msg = {:update, loc, new_state}
-          for pid <- [grid | cells], do: send(pid, msg)
-        end
-
         acell(loc, grid, cells, new_state, new_hood)
     end
-  end
-
-  @spec occupancy(X.occupancy_map()) :: X.occupancy_count()
-  defp occupancy(hood) do
-    Enum.reduce(hood, 0, fn
-      {_pid, false}, occ -> occ
-      {_pid, true}, occ -> occ + 1
-    end)
   end
 end

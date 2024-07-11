@@ -1,32 +1,14 @@
 defmodule Expaca.VideoTest do
   use ExUnit.Case
 
-  use Exa.Image.Constants
+  import Expaca.TestUtil
 
   alias Exa.Image.Video
 
-  @filetype_mp4 "mp4"
-
-  @png_out_dir ["test", "output"]
-
-  def file_glob(dir, name) do
-    (@png_out_dir ++ [dir])
-    |> Exa.File.join(name <> "-*", @filetype_png)
-    |> Exa.String.wraps("'", "'")
-  end
-
-  def file_iseq(dir, name) do
-    (@png_out_dir ++ [dir])
-    |> Exa.File.join(name <> "_%04d", @filetype_png)
-
-    # globbing not available on Windows
-    # protect the glob * symbol
-    # |> Exa.String.wraps("'", "'")
-  end
-
-  def out_mp4(dir, name) do
-    Exa.File.join(@png_out_dir ++ [dir], name, @filetype_mp4)
-  end
+  # **************************************
+  # requires that synch_test be run first
+  # to populate the animation sequences
+  # **************************************
 
   test "basic" do
     cmd = Video.ensure_installed!(:ffmpeg)
@@ -34,26 +16,29 @@ defmodule Expaca.VideoTest do
     assert not is_nil(cmd)
   end
 
-  # **************************************
-  # requires that synch_test be run first
-  # to populate the glider images
-  # **************************************
-
   test "glider" do
-    Logger.configure(level: :error)
-    seq = file_iseq("glider", "glider")
-    mp4 = out_mp4("glider", "glider")
+    seq = file_iseq("s_glider", "s_glider")
+    mp4 = out_mp4("s_glider", "s_glider")
+    to_video(seq, mp4, 12)
+  end
+
+  test "random" do
+    seq = file_iseq("s_random", "s_random")
+    mp4 = out_mp4("s_random", "s_random")
+    to_video(seq, mp4, 12)
+  end
+
+  defp to_video(seq,mp4,frate) do
 
     args = [
+      loglevel: "error",
       overwrite: "y",
-      framerate: 12,
-      # globbing not available on Windows
-      # pattern_type: "glob",
+      i: seq,
+      framerate: frate,
+      r: frate,
       pattern_type: "sequence",
       start_number: "0001",
-      i: seq,
       "c:v": "libx264",
-      r: 12,
       pix_fmt: "yuv420p"
     ]
 

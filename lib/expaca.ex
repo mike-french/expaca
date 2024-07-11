@@ -9,13 +9,18 @@ defmodule Expaca do
 
   alias Expaca.Frame
   alias Expaca.Sgrid
+  alias Expaca.Agrid
 
   # ----------------
   # public interface
   # ----------------
 
   @doc """
-  Run a synchronized grid simulation.
+  Run a grid simulation.
+
+  The simulation mode can be either:
+  - `:synch` for synchronous global time steps (generations)
+  - `:asynch` for non-deterministic local update steps
 
   Dimensions `{w,h}` are the size of the 2D grid in I and J directions.
 
@@ -46,6 +51,10 @@ defmodule Expaca do
 
   The output is a sequence of bitmaps.
 
+  Images are generated differently for the two modes:
+  - `:synch` one image for each global time steps (generation)
+  - `:asynch` one image for each local state change
+
   The `client` argument determines the output behavior:
   - `nil` (default) means block, accumulate all frames, 
      then return the full sequence
@@ -63,23 +72,27 @@ defmodule Expaca do
   - `Exa.Image.Bitmap` to convert to ASCII art, and grayscale or RGB images
   - `Exa.Image.Video` to make a video (if you have ffmpeg installed)
   """
-  @spec grid_synch(X.frame() | X.asciiart() | %I.Bitmap{}, X.generation(), nil | pid()) ::
+  @spec evolve(X.frame() | X.asciiart() | %I.Bitmap{}, X.mode(), X.generation(), nil | pid()) ::
           :ok | [%I.Bitmap{}]
-  def grid_synch(frame0, ngen \\ 100, client \\ nil)
+  def evolve(frame0, mode, ngen \\ 100, client \\ nil)
 
-  def grid_synch(ascii0, ngen, client) when is_asciiart(ascii0) and is_ngen(ngen) do
-    ascii0 |> Frame.from_ascii() |> Sgrid.start(ngen, client)
+  def evolve(frame0, mode, ngen, client) when is_frame(frame0) and is_ngen(ngen) do
+    gmod =
+      case mode do
+        :synch -> Sgrid
+        :asynch -> Agrid
+      end
+
+    gmod.start(frame0, ngen, client)
     recv_frames(client)
   end
 
-  def grid_synch(%I.Bitmap{} = bmp0, ngen, client) when is_ngen(ngen) do
-    bmp0 |> Frame.from_bitmap() |> Sgrid.start(ngen, client)
-    recv_frames(client)
+  def evolve(ascii0, mode, ngen, client) when is_asciiart(ascii0) do
+    ascii0 |> Frame.from_ascii() |> evolve(mode, ngen, client)
   end
 
-  def grid_synch(frame0, ngen, client) when is_frame(frame0) and is_ngen(ngen) do
-    frame0 |> Sgrid.start(ngen, client)
-    recv_frames(client)
+  def evolve(%I.Bitmap{} = bmp0, mode, ngen, client) do
+    bmp0 |> Frame.from_bitmap() |> evolve(mode, ngen, client)
   end
 
   # -----------------
@@ -98,5 +111,5 @@ defmodule Expaca do
   end
 
   # calling program is client, so prompt return
-  defp recv_frames(_pid, 0, []), do: :ok
+  defp recv_frames(pid, 0, []) when is_pid(pid), do: :ok
 end

@@ -14,6 +14,9 @@ defmodule Expaca.Agrid do
   alias Expaca.Frame
   alias Expaca.Rules
 
+  # number of cell changes to output a new frame
+  @frame_steps 20
+
   @doc "Start the asynchronous grid process."
   @spec start(X.frame(), X.generation(), nil | pid()) :: pid()
   def start(frame0, ngen, client) do
@@ -42,20 +45,19 @@ defmodule Expaca.Agrid do
       send(pid, {:connect, self(), Rules.neighborhood(loc, dims, grid)})
     end
 
-    # send the initial state and trigger them to start evolving
+    # send the initial state and trigger start of evolution
     for j <- 1..nj, i <- 1..ni, loc = {i, j} do
       send(Map.fetch!(grid, loc), {:init, self, MapSet.member?(fset0, loc)})
     end
 
-    # hack scale up the steps
-    # because asynch has bitmap for every change 
+    # hack to scale up the steps
+    # because asynch has whole bitmap for every cell change 
     nstep = ngen * ni
 
-    # could keep the fset state, to halt when the frame is empty
     bmap0 = Frame.to_bitmap(frame0)
     send(client, {:frame, 0, bmap0})
 
-    agrid(client, grid, nstep, 0, bmap0)
+    agrid(client, grid, nstep, 1, map_size(fset0), bmap0)
   end
 
   # main loop
@@ -68,23 +70,30 @@ defmodule Expaca.Agrid do
           nstep :: X.generation(),
           # current step number
           istep :: non_neg_integer(),
+          # current count of occupied cells
+          size :: E.count0(),
           # current frame as a full bitmap
           bmap :: I.Bitmap.bitmap()
         ) :: no_return()
 
-  def agrid(client, _grid, nstep, nstep, _bmap) do
-    # end of all generations
-    send(client, :end_of_frames)
-  end
+  defp agrid(client, grid, nstep, istep, size, bmap) do
+    IO.inspect({nstep, istep, size})
+    # empty frame ends the simulation
+    if istep == nstep or size == 0 do
+      send(client, :end_of_frames)
+      exit(:normal)
+    end
 
-  def agrid(client, grid, nstep, istep, bmap) do
-    # every cell update emits a new bitmap frame
     receive do
       {:update, {i, j}, state} ->
         bit = if state, do: 1, else: 0
+        new_size = size + (2 * bit - 1)
         new_bmap = Bitmap.set_bit(bmap, {i - 1, j - 1}, bit)
-        send(client, {:frame, istep, new_bmap})
-        agrid(client, grid, nstep, istep + 1, new_bmap)
+        # every few cell updates emit a new bitmap frame
+        if rem(istep, @frame_steps) == 0 do
+          send(client, {:frame, istep, new_bmap})
+        end
+        agrid(client, grid, nstep, istep + 1, new_size, new_bmap)
     end
   end
 end

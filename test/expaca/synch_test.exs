@@ -1,21 +1,7 @@
 defmodule Expaca.SynchTest do
   use ExUnit.Case
 
-  use Exa.Image.Constants
-
-  alias Expaca.Frame
-
-  alias Exa.Color.Col3b
-  alias Exa.Image.Bitmap
-  alias Exa.Image.Resize
-  alias Exa.Image.ImageWriter
-
-  @png_out_dir ["test", "output"]
-
-  defp out_png(dir, name, i) do
-    n = String.pad_leading(Integer.to_string(i), 4, "0")
-    Exa.File.join(@png_out_dir ++ [dir], "#{name}_#{n}", @filetype_png)
-  end
+  import Expaca.TestUtil
 
   doctest Expaca
 
@@ -101,22 +87,22 @@ defmodule Expaca.SynchTest do
   # -----
 
   test "diag" do
-    asciis = {3, 3, @diag} |> Expaca.grid_synch(3) |> to_ascii()
+    asciis = {3, 3, @diag} |> Expaca.evolve(:synch, 3) |> to_ascii()
     assert_ascii([@diag1, @diag2, @diag3], asciis)
   end
 
   test "blinker" do
-    asciis = {3, 3, @blinker1} |> Expaca.grid_synch(3) |> to_ascii()
+    asciis = {3, 3, @blinker1} |> Expaca.evolve(:synch, 3) |> to_ascii()
     assert_ascii([@blinker1, @blinker2, @blinker1], asciis)
   end
 
   test "toad" do
-    asciis = {4, 4, @toad1} |> Expaca.grid_synch(3) |> to_ascii()
+    asciis = {4, 4, @toad1} |> Expaca.evolve(:synch, 3) |> to_ascii()
     assert_ascii([@toad1, @toad2, @toad1], asciis)
   end
 
   test "small glider" do
-    bitmaps = Expaca.grid_synch({4, 4, @glider1}, 5)
+    bitmaps = Expaca.evolve({4, 4, @glider1}, :synch, 5)
     asciis = to_ascii(bitmaps)
     assert_ascii([@glider1, @glider2, @glider3, @glider4, @glider5], asciis)
   end
@@ -130,8 +116,7 @@ defmodule Expaca.SynchTest do
         MapSet.put(fset, {i, j + d - 3})
       end)
 
-    bitmaps = Expaca.grid_synch({d, d, init}, 3 * d)
-    to_images("glider", bitmaps)
+    {d, d, init} |> Expaca.evolve(:synch, 3 * d) |> to_images("s_glider")
   end
 
   @tag timeout: 90_000
@@ -143,61 +128,13 @@ defmodule Expaca.SynchTest do
         MapSet.put(fset, {i, j + d - 3})
       end)
 
-    :ok = Expaca.grid_synch({d, d, init}, 3 * d, self())
-    recv_frames(0)
+    :ok = Expaca.evolve({d, d, init}, :synch, 3 * d, self())
+    recv_frames(0, "s_stream")
   end
 
-  # -----------------
-  # private functions 
-  # -----------------
-
-  @fgchar ?X
-  @bgchar ?.
-
-  @fgcol Col3b.gray_pc(90)
-  @bgcol Col3b.gray_pc(25)
-
-  @out_subdir "glider"
-
-  defp recv_frames(igen) do
-    receive do
-      {:frame, ^igen, bmp} ->
-        bmp2file("stream", bmp, igen)
-        recv_frames(igen + 1)
-
-      :end_of_frames ->
-        :ok
-    end
-  end
-
-  defp assert_ascii(as1, as2)
-       when is_list(as1) and is_list(as2) and
-              length(as1) == length(as2) do
-    Enum.each(Enum.zip(as1, as2), fn {s1, s2} ->
-      assert Frame.ascii_equals?(s1, s2)
-    end)
-  end
-
-  defp to_ascii(bitmaps) do
-    Enum.map(bitmaps, fn bmp ->
-      ascii = bmp |> Bitmap.reflect_y() |> Bitmap.to_ascii(@fgchar, @bgchar)
-      IO.puts(ascii)
-      ascii
-    end)
-  end
-
-  defp to_images(name, bmps) do
-    Enum.reduce(bmps, 1, fn bmp, i ->
-      bmp2file(name, bmp, i)
-      i + 1
-    end)
-  end
-
-  defp bmp2file(name, bmp, i, scale \\ 4) do
-    bmp
-    |> Bitmap.reflect_y()
-    |> Bitmap.to_image(:rgb, @fgcol, @bgcol)
-    |> Resize.resize(scale)
-    |> ImageWriter.to_file(out_png(@out_subdir, name, i))
+  @tag timeout: 90_000
+  test "random" do
+    d = 50
+    random(d, d) |> Expaca.evolve(:synch, 3 * d) |> to_images("s_random")
   end
 end
