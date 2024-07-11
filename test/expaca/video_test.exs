@@ -5,10 +5,10 @@ defmodule Expaca.VideoTest do
 
   alias Exa.Image.Video
 
-  # **************************************
-  # requires that synch_test be run first
+  # ****************************************
+  # requires that a/synch tests be run first
   # to populate the animation sequences
-  # **************************************
+  # ****************************************
 
   test "basic" do
     cmd = Video.ensure_installed!(:ffmpeg)

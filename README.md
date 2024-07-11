@@ -18,6 +18,8 @@ Every grid cell has its own fine grain asynchronous process,
 which contains process IDs of its immediate neighbors,
 so that they can exchange messages.
 
+![random synchronous](./assets/s_random.gif)
+
 ## 2D Grid
   
 We will implement 2D rectangular grids,

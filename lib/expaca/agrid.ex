@@ -76,6 +76,7 @@ defmodule Expaca.Agrid do
         ) :: no_return()
 
   defp agrid(client, grid, nstep, istep, size, bmap) do
+    # IO.inspect({nstep, istep, size})
     # empty frame ends the simulation
     if istep == nstep or size == 0 do
       send(client, :end_of_frames)

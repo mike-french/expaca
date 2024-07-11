@@ -27,6 +27,7 @@ defmodule Expaca.MixProject do
     [
       main: "readme",
       output: "doc/api",
+      assets: %{"assets" => "assets"},
       extras: ["README.md"]
     ]
   end
