@@ -89,10 +89,8 @@ defmodule Expaca.Agrid do
         bit = if state, do: 1, else: 0
         new_size = size + (2 * bit - 1)
         new_bmap = Bitmap.set_bit(bmap, {i - 1, j - 1}, bit)
-        # every few cell updates emit a new bitmap frame
-        #if rem(istep, @frame_steps) == 0 do
-          send(client, {:frame, istep, new_bmap})
-        #end
+        :erlang.garbage_collect()
+        send(client, {:frame, istep, new_bmap})
         agrid(client, grid, nstep, istep + 1, new_size, new_bmap)
     end
   end

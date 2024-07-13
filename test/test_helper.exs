@@ -1,4 +1,4 @@
-ExUnit.start(timeout: 10000, exclude: [benchmark: true, codegen: true, visual: true])
+ExUnit.start(timeout: 10000, exclude: [oom: true, benchmark: true, codegen: true, visual: true])
 
 defmodule Expaca.TestUtil do
   use ExUnit.Case
@@ -93,6 +93,8 @@ defmodule Expaca.TestUtil do
     |> Bitmap.to_image(:rgb, @fgcol, @bgcol)
     |> Resize.resize(scale)
     |> ImageWriter.to_file(out_png(name, name, i))
+
+    :erlang.garbage_collect()
   end
 
   # generate a random bitmap
