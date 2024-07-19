@@ -65,15 +65,9 @@ defmodule Expaca.AsynchTest do
     {4, 4, @glider1} |> Expaca.evolve(:asynch, 5) |> to_ascii()
   end
 
-  # seems to be big problem with asynch cells filling message queues
-  # but grid is blocked or overloaded and becomes a bottleneck
-  # run these at your own risk :)
-
-  # dangerous OOM leak needs fixing
-  @tag oom: true
   @tag timeout: 120_000
   test "big glider image batch" do
-    d = 10
+    d = 50
 
     init =
       Enum.reduce(@glider, MapSet.new(), fn {i, j}, fset ->
@@ -83,11 +77,9 @@ defmodule Expaca.AsynchTest do
     {d, d, init} |> Expaca.evolve(:synch, d) |> to_images("a_glider")
   end
 
-  # dangerous OOM leak needs fixing
-  @tag oom: true
   @tag timeout: 120_000
   test "big glider image stream" do
-    d = 10
+    d = 20
 
     init =
       Enum.reduce(@glider, MapSet.new(), fn {i, j}, fset ->
@@ -98,14 +90,12 @@ defmodule Expaca.AsynchTest do
     recv_frames(0, "a_stream")
   end
 
-  # dangerous OOM leak needs fixing
-  @tag oom: true
   @tag timeout: 120_000
   test "random stream" do
-    d = 10
+    d = 20
     init = random(d, d)
     init |> Exa.Image.Bitmap.to_ascii() |> IO.puts()
-    :ok = Expaca.evolve(init, :asynch, d, self()) 
+    :ok = Expaca.evolve(init, :asynch, d, self())
     recv_frames(0, "a_random")
   end
 end

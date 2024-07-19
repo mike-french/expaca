@@ -53,9 +53,9 @@ defmodule Expaca.Rules do
 
   @doc "Encode a location as a single small integer."
   @spec hash(X.location()) :: X.ijhash()
-  def hash({i,j}), do: (i <<< 12) ||| j
+  def hash({i, j}), do: i <<< 12 ||| j
 
   @doc "Decode a single small integer into a location."
   @spec unhash(X.ijhash()) :: X.location()
-  def unhash(hash), do: {(hash >>> 12) &&& 0xFFF, hash &&& 0xFFF}
+  def unhash(hash), do: {hash >>> 12 &&& 0xFFF, hash &&& 0xFFF}
 end

@@ -1,9 +1,13 @@
 defmodule Expaca.Acell do
   @moduledoc "Asynchronous cell."
- 
+
   alias Expaca.Types, as: X
 
   alias Expaca.Rules
+
+  # wait after processing local update
+  # helps to achieve balanced execution
+  @cell_wait 10
 
   @doc "Start the asynchronous cell process."
   @spec start(X.ijhash(), pid()) :: pid()
@@ -77,8 +81,11 @@ defmodule Expaca.Acell do
 
     if new_state != state do
       msg = {:update, hash, new_state}
-      for pid <- [grid|cells], do: send(pid, msg)
+      for pid <- [grid | cells], do: send(pid, msg)
     end
+
+    # pause execution to wait for neighbors to update
+    Process.sleep(@cell_wait)
 
     # receive state change message from neighbors 
     receive do

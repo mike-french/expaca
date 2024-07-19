@@ -58,7 +58,7 @@ defmodule Expaca.Scell do
           occ :: X.occupancy_count()
         ) :: no_return()
 
-  defp scell(_hash, _grid, ngen, ngen, _cells, _state, _, _, _) do 
+  defp scell(_hash, _grid, ngen, ngen, _cells, _state, _, _, _) do
     exit(:normal)
   end
 

@@ -36,7 +36,7 @@ defmodule Expaca.TestUtil do
 
   def out_gif(dir, name) do
     Exa.File.join(@out_dir ++ [dir], name, @filetype_gif)
-  end 
+  end
 
   def file_glob(dir, name) do
     (@out_dir ++ [dir])
@@ -93,8 +93,6 @@ defmodule Expaca.TestUtil do
     |> Bitmap.to_image(:rgb, @fgcol, @bgcol)
     |> Resize.resize(scale)
     |> ImageWriter.to_file(out_png(name, name, i))
-
-    :erlang.garbage_collect()
   end
 
   # generate a random bitmap

@@ -14,8 +14,8 @@ defmodule Expaca.Agrid do
   alias Expaca.Frame
   alias Expaca.Rules
 
-  # number of cell changes to output a new frame
-  # @frame_steps 20
+  # timeout for grid aggregator
+  @grid_timeout 1_000
 
   @doc "Start the asynchronous grid process."
   @spec start(X.frame(), X.generation(), nil | pid()) :: pid()
@@ -76,7 +76,6 @@ defmodule Expaca.Agrid do
         ) :: no_return()
 
   defp agrid(client, grid, nstep, istep, size, bmap) do
-    # IO.inspect({nstep, istep, size})
     # empty frame ends the simulation
     if istep == nstep or size == 0 do
       send(client, :end_of_frames)
@@ -92,6 +91,10 @@ defmodule Expaca.Agrid do
         :erlang.garbage_collect()
         send(client, {:frame, istep, new_bmap})
         agrid(client, grid, nstep, istep + 1, new_size, new_bmap)
+    after
+      @grid_timeout ->
+        send(client, :end_of_frames)
+        exit(:timeout)
     end
   end
 end

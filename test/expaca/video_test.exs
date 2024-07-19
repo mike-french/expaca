@@ -32,16 +32,15 @@ defmodule Expaca.VideoTest do
     vtest("a_random", 30)
   end
 
-  defp vtest(name,frate) do
-    seq = file_iseq(name,name)
-    mp4 = out_mp4(name,name)
-    gif = out_gif(name,name)
+  defp vtest(name, frate) do
+    seq = file_iseq(name, name)
+    mp4 = out_mp4(name, name)
+    gif = out_gif(name, name)
     to_video(seq, mp4, frate)
     to_gif(seq, gif, frate)
   end
 
-  defp to_video(seq,mp4,frate) do
-
+  defp to_video(seq, mp4, frate) do
     args = [
       loglevel: "error",
       overwrite: "y",
@@ -57,8 +56,7 @@ defmodule Expaca.VideoTest do
     Video.from_files(mp4, args)
   end
 
-  defp to_gif(seq,gif,frate) do
-
+  defp to_gif(seq, gif, frate) do
     args = [
       loglevel: "error",
       overwrite: "y",
@@ -67,10 +65,11 @@ defmodule Expaca.VideoTest do
       r: frate,
       pattern_type: "sequence",
       start_number: "0001",
-      vf: "fps=#{frate},scale=100:-1:flags=lanczos,"<>
-          "split[s0][s1];"<>
-          "[s0]palettegen[p];"<>
-          "[s1][p]paletteuse" 
+      vf:
+        "fps=#{frate},scale=100:-1:flags=lanczos," <>
+          "split[s0][s1];" <>
+          "[s0]palettegen[p];" <>
+          "[s1][p]paletteuse"
     ]
 
     Video.from_files(gif, args)
