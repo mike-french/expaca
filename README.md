@@ -153,9 +153,6 @@ Each cell will have the following state:
 
 The previous state is known to be complete for all cells.
 
-The current generation counts down to 0,
-so the next generation is just previous generation - 1.
-
 There are two types of process:
 - grid manager (one instance)
   - spawns and controls the cells
@@ -163,7 +160,7 @@ There are two types of process:
   - sends completed frames to the client
   - exits after some number of generations
 - cell worker (`ni*nj` instances)
-  - multistage initialization of state
+  - multistage initialization: location, neighborhood, initial state
   - start processing
   - send state to each neighbor
   - receive state from each neighbor
@@ -221,4 +218,10 @@ from starving other regions of active cells.
 Asynch CA appears to evolve at random,
 but the random number generator is 
 deterministic, given the original seed.
+
+There are a couple ways to affect scheduling:
+- change the number of BEAM reductions 
+  between a context switch (not yet attempted)
+- pause the cell after a state update to allow other cells to run
+  (a _sleep_ that acts like a _yield_ )
 
