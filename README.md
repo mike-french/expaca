@@ -136,10 +136,12 @@ See the test suite for examples.
 ## Output Mode
 
 Both the synch and asynch simulations can run in two modes
-that determine how the output bitmaps are delivered back to the client:
-- `:synch` the _evolve_ simulation blocks, accumulates all frames, 
+that determine how the output bitmaps are delivered back to the client.
+
+The behavior is controlled by providing a client process address (PID):
+- `nil` the _evolve_ simulation blocks, accumulates all frames, 
   then returns them as a list to the client, so all are present in memory
-- `:asynch` the _evolve_ call returns promptly,
+- `pid` the _evolve_ call returns promptly,
   the process emits a message to the client with each completed frame,
   the client may handle and output the frame in parallel with the ongoing simulation, 
   frames may be written to file and garbage collected
