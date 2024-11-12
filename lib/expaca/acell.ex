@@ -5,8 +5,11 @@ defmodule Expaca.Acell do
 
   alias Expaca.Rules
 
-  # wait after processing local update
+  # wait (ms) after processing local update
+  # lets a changed state persist for some time
   # helps to achieve balanced execution
+  # prevents tight local loops of blinking alternation
+  # introduces some smoothness to the behavior
   @cell_wait 10
 
   @doc "Start the asynchronous cell process."
