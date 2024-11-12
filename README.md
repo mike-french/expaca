@@ -238,3 +238,9 @@ There are a couple ways to affect scheduling:
 - pause the cell after a state update to allow other cells to run
   (a _sleep_ that acts like a _yield_ )
 
+## License
+
+Expaca source code is released under the MIT license.
+
+Expaca code and documentation are:<br>
+Copyright (c) 2024 Mike French
