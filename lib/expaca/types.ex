@@ -66,7 +66,7 @@ defmodule Expaca.Types do
   @type frame() :: {I.size(), I.size(), MapSet.t()}
 
   defguard is_frame(f)
-           when is_fix_tuple(f, 3) and
+           when is_tuple_fix(f, 3) and
                   is_dims(elem(f, 0), elem(f, 1)) and is_struct(elem(f, 2), MapSet)
 
   @typedoc "A frame represented as an ascii art string."
@@ -74,7 +74,7 @@ defmodule Expaca.Types do
 
   # allow for Windows or Unix line endings
   defguard is_asciiart(f)
-           when is_fix_tuple(f, 3) and
+           when is_tuple_fix(f, 3) and
                   is_dims(elem(f, 0), elem(f, 1)) and is_string(elem(f, 2)) and
                   (byte_size(elem(f, 2)) == elem(f, 1) * (elem(f, 0) + 1) or
                      byte_size(elem(f, 2)) == elem(f, 1) * (elem(f, 0) + 2))
