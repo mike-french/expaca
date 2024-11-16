@@ -3,7 +3,7 @@ defmodule Expaca.MixProject do
 
   @lib :expaca
   @name "Expaca"
-  @ver "0.2.0"
+  @ver "0.2.1"
 
   def project do
     [
@@ -27,7 +27,7 @@ defmodule Expaca.MixProject do
     ]
   end
 
-  def docs do
+  defp docs do
     [
       main: "readme",
       output: "doc/api",
@@ -41,10 +41,10 @@ defmodule Expaca.MixProject do
     [
       # runtime code dependencies ------------------
 
-      {:exa_core, git: "https://github.com/red-jade/exa_core.git", tag: "v0.3.1", app: false},
-      {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.3.1", app: false},
-      {:exa_color, git: "https://github.com/red-jade/exa_color.git", tag: "v0.3.1", app: false},
-      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.3.1", app: false},
+      {:exa_core, git: "https://github.com/red-jade/exa_core.git", tag: "v0.3.2"},
+      {:exa_space, git: "https://github.com/red-jade/exa_space.git", tag: "v0.3.2"},
+      {:exa_color, git: "https://github.com/red-jade/exa_color.git", tag: "v0.3.2"},
+      {:exa_image, git: "https://github.com/red-jade/exa_image.git", tag: "v0.3.2"},
 
       # building, documenting ----------
 
